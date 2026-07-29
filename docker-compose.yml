@@ -1,0 +1,88 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-beyond_signal}
+      POSTGRES_USER: ${POSTGRES_USER:-beyond_signal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-beyond_signal} -d ${POSTGRES_DB:-beyond_signal}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [beyond-signal]
+
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [beyond-signal]
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    networks: [beyond-signal]
+    profiles: ["ai"]
+
+  ai-service:
+    build: ./apps/ai-service
+    environment:
+      AI_SERVICE_PORT: 8000
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+    ports:
+      - "${AI_SERVICE_PORT:-8000}:8000"
+    networks: [beyond-signal]
+
+  game-server:
+    build: ./apps/game-server
+    environment:
+      GAME_SERVER_PORT: 8080
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-beyond_signal}
+      POSTGRES_USER: ${POSTGRES_USER:-beyond_signal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AI_SERVICE_URL: http://ai-service:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+    ports:
+      - "${GAME_SERVER_PORT:-8080}:8080"
+    networks: [beyond-signal]
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        VITE_GAME_API_URL: ${VITE_GAME_API_URL:-http://localhost:8080}
+    depends_on:
+      game-server:
+        condition: service_started
+    ports:
+      - "3000:80"
+    networks: [beyond-signal]
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_data:
+
+networks:
+  beyond-signal:
+    driver: bridge

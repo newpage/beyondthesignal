@@ -1,0 +1,10 @@
+.env
+.idea/
+.vscode/
+**/target/
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
+apps/web/node_modules/
+apps/web/dist/
+.DS_Store
