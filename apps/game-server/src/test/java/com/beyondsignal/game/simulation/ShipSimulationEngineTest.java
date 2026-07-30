@@ -162,6 +162,43 @@ class ShipSimulationEngineTest {
         )).isInstanceOf(UnsupportedOperationException.class);
     }
 
+
+    @Test
+    void appliesEngineeringScienceAndCaptainCommands() {
+        ShipState initial = ShipState.initial(UUID.randomUUID());
+
+        ShipState next = engine.tick(
+            initial,
+            List.of(
+                new AllocatePowerCommand(ShipSubsystem.ENGINES, 35),
+                new AllocatePowerCommand(ShipSubsystem.SENSORS, 20),
+                new ScanContactsCommand(),
+                new SetRedAlertCommand(true)
+            ),
+            Duration.ofMillis(50)
+        );
+
+        assertThat(next.subsystems().get(ShipSubsystem.ENGINES).powerAllocation()).isEqualTo(35);
+        assertThat(next.subsystems().get(ShipSubsystem.SENSORS).powerAllocation()).isEqualTo(20);
+        assertThat(next.redAlert()).isTrue();
+        assertThat(next.scansCompleted()).isEqualTo(1);
+        assertThat(next.sensorCooldownTicks()).isEqualTo(ShipSimulationEngine.SENSOR_SCAN_COOLDOWN_TICKS);
+    }
+
+    @Test
+    void ignoresRepeatedScienceScanUntilCooldownExpires() {
+        ShipState state = engine.tick(
+            ShipState.initial(UUID.randomUUID()),
+            List.of(new ScanContactsCommand()),
+            Duration.ofMillis(50)
+        );
+
+        state = engine.tick(state, List.of(new ScanContactsCommand()), Duration.ofMillis(50));
+
+        assertThat(state.scansCompleted()).isEqualTo(1);
+        assertThat(state.sensorCooldownTicks()).isEqualTo(ShipSimulationEngine.SENSOR_SCAN_COOLDOWN_TICKS - 1);
+    }
+
     private static org.assertj.core.data.Offset<Double> within(double value) {
         return org.assertj.core.data.Offset.offset(value);
     }

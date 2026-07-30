@@ -10,6 +10,7 @@ public final class ShipSimulationEngine {
     private static final double MAX_SPEED_UNITS_PER_SECOND = 100.0;
     public static final int PHASER_COOLDOWN_TICKS = 10;
     public static final int PHASER_DAMAGE = 25;
+    public static final int SENSOR_SCAN_COOLDOWN_TICKS = 40;
 
     public ShipState tick(ShipState current, List<? extends ShipCommand> commands, Duration elapsed) {
         Objects.requireNonNull(current, "current must not be null");
@@ -29,6 +30,9 @@ public final class ShipSimulationEngine {
         java.util.Map<java.util.UUID, CombatContactState> combatContacts =
             new java.util.LinkedHashMap<>(current.combatContacts());
         CombatEventState lastCombatEvent = current.lastCombatEvent();
+        boolean redAlert = current.redAlert();
+        int sensorCooldownTicks = Math.max(0, current.sensorCooldownTicks() - 1);
+        long scansCompleted = current.scansCompleted();
         EnumMap<ShipSubsystem, SubsystemState> subsystems =
             new EnumMap<>(current.subsystems());
 
@@ -75,6 +79,13 @@ public final class ShipSimulationEngine {
                         }
                     }
                 }
+                case ScanContactsCommand ignored -> {
+                    if (sensorCooldownTicks == 0) {
+                        sensorCooldownTicks = SENSOR_SCAN_COOLDOWN_TICKS;
+                        scansCompleted++;
+                    }
+                }
+                case SetRedAlertCommand setRedAlert -> redAlert = setRedAlert.enabled();
                 case AllocatePowerCommand allocatePower -> {
                     SubsystemState existing = subsystems.get(allocatePower.subsystem());
                     subsystems.put(
@@ -117,6 +128,9 @@ public final class ShipSimulationEngine {
             shotsFired,
             combatContacts,
             lastCombatEvent,
+            redAlert,
+            sensorCooldownTicks,
+            scansCompleted,
             subsystems
         );
     }

@@ -24,6 +24,9 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
     private final ReplicationMessageSerializer serializer;
     private final HelmCommandHandler helmCommandHandler;
     private final TacticalCommandHandler tacticalCommandHandler;
+    private final EngineeringCommandHandler engineeringCommandHandler;
+    private final ScienceCommandHandler scienceCommandHandler;
+    private final CaptainCommandHandler captainCommandHandler;
 
     public SessionWebSocketGateway(GameSessionService service, SessionEventHub eventHub) {
         this(service, eventHub, ignored -> Optional.empty(), (sessionId, command) -> {
@@ -55,6 +58,9 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
             Objects.requireNonNull(commandGateway, "commandGateway must not be null");
         this.helmCommandHandler = new HelmCommandHandler(service, requiredGateway);
         this.tacticalCommandHandler = new TacticalCommandHandler(service, requiredGateway, stateProvider);
+        this.engineeringCommandHandler = new EngineeringCommandHandler(service, requiredGateway, stateProvider);
+        this.scienceCommandHandler = new ScienceCommandHandler(service, requiredGateway, stateProvider);
+        this.captainCommandHandler = new CaptainCommandHandler(service, requiredGateway);
     }
 
     @Override
@@ -108,6 +114,9 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
                     helmCommandHandler.handle(sessionId, request, response);
                 case "SET_SHIELDS", "SELECT_TARGET", "CLEAR_TARGET", "FIRE_WEAPON" ->
                     tacticalCommandHandler.handle(sessionId, request, response);
+                case "ALLOCATE_POWER" -> engineeringCommandHandler.handle(sessionId, request, response);
+                case "SCAN_CONTACTS" -> scienceCommandHandler.handle(sessionId, request, response);
+                case "SET_RED_ALERT" -> captainCommandHandler.handle(sessionId, request, response);
                 default -> socket.writeTextMessage(new JsonObject()
                     .put("protocolVersion", ReplicationMessageSerializer.PROTOCOL_VERSION)
                     .put("type", "INVALID_COMMAND")

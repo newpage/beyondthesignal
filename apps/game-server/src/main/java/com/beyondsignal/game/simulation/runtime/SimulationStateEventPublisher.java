@@ -44,6 +44,13 @@ public final class SimulationStateEventPublisher implements SimulationStateListe
         payload.put("shieldsRaised", state.shieldsRaised());
         payload.put("weaponCooldownTicks", state.weaponCooldownTicks());
         payload.put("shotsFired", state.shotsFired());
+        payload.put("redAlert", state.redAlert());
+        payload.put("sensorCooldownTicks", state.sensorCooldownTicks());
+        payload.put("scansCompleted", state.scansCompleted());
+        payload.put("subsystems", state.subsystems().entrySet().stream().collect(java.util.stream.Collectors.toMap(
+            entry -> entry.getKey().name(),
+            entry -> Map.of("health", entry.getValue().health(), "powerAllocation", entry.getValue().powerAllocation())
+        )));
         payload.put("combatContacts", state.combatContacts().values().stream()
             .map(SimulationStateEventPublisher::contactPayload)
             .toList());

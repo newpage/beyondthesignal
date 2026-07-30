@@ -30,6 +30,10 @@ public final class ReplicationMessageSerializer {
                 .put("shieldsRaised", requiredBoolean(payload, "shieldsRaised"))
                 .put("weaponCooldownTicks", requiredNumber(payload, "weaponCooldownTicks").intValue())
                 .put("shotsFired", requiredLong(payload, "shotsFired"))
+                .put("redAlert", payload.getOrDefault("redAlert", false))
+                .put("sensorCooldownTicks", payload.getOrDefault("sensorCooldownTicks", 0))
+                .put("scansCompleted", payload.getOrDefault("scansCompleted", 0))
+                .put("subsystems", new JsonObject(optionalMap(payload, "subsystems")))
                 .put("combatContacts", new JsonArray(requiredList(payload, "combatContacts")))
                 .put("lastCombatEvent", payload.get("lastCombatEvent") == null
                     ? null : new JsonObject(requiredMap(payload, "lastCombatEvent")))
@@ -54,6 +58,13 @@ public final class ReplicationMessageSerializer {
             .put("shieldsRaised", state.shieldsRaised())
             .put("weaponCooldownTicks", state.weaponCooldownTicks())
             .put("shotsFired", state.shotsFired())
+            .put("redAlert", state.redAlert())
+            .put("sensorCooldownTicks", state.sensorCooldownTicks())
+            .put("scansCompleted", state.scansCompleted())
+            .put("subsystems", new JsonObject(state.subsystems().entrySet().stream().collect(java.util.stream.Collectors.toMap(
+                entry -> entry.getKey().name(),
+                entry -> Map.of("health", entry.getValue().health(), "powerAllocation", entry.getValue().powerAllocation())
+            ))))
             .put("combatContacts", new JsonArray(state.combatContacts().values().stream()
                 .map(contact -> new JsonObject()
                     .put("id", contact.id().toString())
@@ -101,6 +112,12 @@ public final class ReplicationMessageSerializer {
             throw new IllegalArgumentException("Missing or invalid replication field: " + name);
         }
         return number;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> optionalMap(Map<String, Object> payload, String name) {
+        Object value = payload.get(name);
+        return value instanceof Map<?, ?> map ? (Map<String, Object>) map : Map.of();
     }
 
     @SuppressWarnings("unchecked")

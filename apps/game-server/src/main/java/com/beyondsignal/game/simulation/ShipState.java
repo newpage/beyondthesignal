@@ -20,6 +20,9 @@ public record ShipState(
     long shotsFired,
     Map<UUID, CombatContactState> combatContacts,
     CombatEventState lastCombatEvent,
+    boolean redAlert,
+    int sensorCooldownTicks,
+    long scansCompleted,
     Map<ShipSubsystem, SubsystemState> subsystems
 ) {
     public ShipState {
@@ -41,6 +44,12 @@ public record ShipState(
         }
         if (shotsFired < 0) {
             throw new IllegalArgumentException("shotsFired must not be negative");
+        }
+        if (sensorCooldownTicks < 0) {
+            throw new IllegalArgumentException("sensorCooldownTicks must not be negative");
+        }
+        if (scansCompleted < 0) {
+            throw new IllegalArgumentException("scansCompleted must not be negative");
         }
 
         Map<UUID, CombatContactState> contactCopy = Map.copyOf(
@@ -81,7 +90,7 @@ public record ShipState(
 
         return new ShipState(
             sessionId, 0, Vector3.ZERO, Vector3.ZERO, 0.0, 0, false, null,
-            0, 0, contacts, null, systems
+            0, 0, contacts, null, false, 0, 0, systems
         );
     }
 }
