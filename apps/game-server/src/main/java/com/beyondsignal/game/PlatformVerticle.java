@@ -1,10 +1,18 @@
 package com.beyondsignal.game;
 
+import com.beyondsignal.game.api.GameSessionRoutes;
+import com.beyondsignal.game.persistence.jooq.JooqGameSessionRepository;
+import com.beyondsignal.game.service.GameSessionService;
+import com.beyondsignal.game.websocket.SessionEventHub;
+import com.beyondsignal.game.websocket.SessionWebSocketGateway;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.redis.client.Redis;
@@ -12,16 +20,23 @@ import io.vertx.redis.client.RedisAPI;
 import io.vertx.redis.client.RedisOptions;
 import io.vertx.sqlclient.PoolOptions;
 import io.vertx.sqlclient.SqlClient;
-import io.vertx.ext.web.client.WebClient;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
+import org.postgresql.ds.PGSimpleDataSource;
 
+import java.time.Clock;
 import java.util.Set;
 
 public final class PlatformVerticle extends AbstractVerticle {
     private final Config config;
+
     private SqlClient postgres;
     private Redis redis;
     private RedisAPI redisApi;
     private WebClient webClient;
+    private HttpServer httpServer;
+    private DSLContext dsl;
 
     public PlatformVerticle(Config config) {
         this.config = config;
@@ -29,6 +44,36 @@ public final class PlatformVerticle extends AbstractVerticle {
 
     @Override
     public void start(Promise<Void> startPromise) {
+        configureInfrastructure();
+
+        SessionEventHub eventHub = new SessionEventHub();
+        GameSessionService gameSessionService = new GameSessionService(
+            new JooqGameSessionRepository(dsl),
+            Clock.systemUTC(),
+            eventHub
+        );
+
+        Router router = Router.router(vertx);
+        configureCors(router);
+        configurePlatformRoutes(router);
+        new GameSessionRoutes(gameSessionService).mount(router);
+
+        SessionWebSocketGateway webSocketGateway =
+            new SessionWebSocketGateway(gameSessionService, eventHub);
+
+        httpServer = vertx.createHttpServer()
+            .requestHandler(router)
+            .webSocketHandler(webSocketGateway);
+
+        httpServer.listen(config.port())
+            .onSuccess(server -> {
+                System.out.println("HTTP and WebSocket server listening on " + server.actualPort());
+                startPromise.complete();
+            })
+            .onFailure(startPromise::fail);
+    }
+
+    private void configureInfrastructure() {
         PgConnectOptions pgOptions = new PgConnectOptions()
             .setHost(config.postgresHost())
             .setPort(config.postgresPort())
@@ -42,17 +87,35 @@ public final class PlatformVerticle extends AbstractVerticle {
             .using(vertx)
             .build();
 
+        PGSimpleDataSource dataSource = new PGSimpleDataSource();
+        dataSource.setURL(config.jdbcUrl());
+        dataSource.setUser(config.postgresUser());
+        dataSource.setPassword(config.postgresPassword());
+        dsl = DSL.using(dataSource, SQLDialect.POSTGRES);
+
         redis = Redis.createClient(vertx, new RedisOptions()
             .setConnectionString("redis://%s:%d".formatted(config.redisHost(), config.redisPort())));
         redisApi = RedisAPI.api(redis);
         webClient = WebClient.create(vertx);
+    }
 
-        Router router = Router.router(vertx);
+    private static void configureCors(Router router) {
         router.route().handler(CorsHandler.create()
             .addOrigin("*")
-            .allowedMethods(Set.of(io.vertx.core.http.HttpMethod.GET, io.vertx.core.http.HttpMethod.OPTIONS))
-            .allowedHeader("Content-Type"));
+            .allowedMethods(Set.of(
+                HttpMethod.GET,
+                HttpMethod.POST,
+                HttpMethod.PUT,
+                HttpMethod.DELETE,
+                HttpMethod.OPTIONS
+            ))
+            .allowedHeaders(Set.of(
+                "Content-Type",
+                "Authorization"
+            )));
+    }
 
+    private void configurePlatformRoutes(Router router) {
         router.get("/api/health").handler(ctx -> ctx.json(new JsonObject()
             .put("service", "game-server")
             .put("project", "Beyond the Signal")
@@ -64,15 +127,6 @@ public final class PlatformVerticle extends AbstractVerticle {
             .onFailure(error -> ctx.response().setStatusCode(500).end(new JsonObject()
                 .put("status", "DOWN")
                 .put("error", error.getMessage()).encode())));
-
-        vertx.createHttpServer()
-            .requestHandler(router)
-            .listen(config.port())
-            .onSuccess(server -> {
-                System.out.println("HTTP server listening on " + server.actualPort());
-                startPromise.complete();
-            })
-            .onFailure(startPromise::fail);
     }
 
     private Future<JsonObject> systemStatus() {
@@ -121,9 +175,22 @@ public final class PlatformVerticle extends AbstractVerticle {
     }
 
     @Override
-    public void stop() {
-        if (postgres != null) postgres.close();
-        if (redis != null) redis.close();
-        if (webClient != null) webClient.close();
+    public void stop(Promise<Void> stopPromise) {
+        Future<Void> serverClose = httpServer == null
+            ? Future.succeededFuture()
+            : httpServer.close();
+
+        serverClose.onComplete(ignored -> {
+            if (postgres != null) {
+                postgres.close();
+            }
+            if (redis != null) {
+                redis.close();
+            }
+            if (webClient != null) {
+                webClient.close();
+            }
+            stopPromise.complete();
+        });
     }
 }
