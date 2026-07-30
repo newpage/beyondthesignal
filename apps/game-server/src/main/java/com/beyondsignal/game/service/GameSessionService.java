@@ -10,20 +10,35 @@ import com.beyondsignal.game.service.command.JoinSessionCommand;
 import com.beyondsignal.game.service.command.LeaveSessionCommand;
 import com.beyondsignal.game.service.command.StartSessionCommand;
 import com.beyondsignal.game.service.command.UnassignStationCommand;
+import com.beyondsignal.game.service.event.NoOpSessionEventPublisher;
+import com.beyondsignal.game.service.event.SessionEvent;
+import com.beyondsignal.game.service.event.SessionEventPublisher;
+import com.beyondsignal.game.service.event.SessionEventType;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
 public final class GameSessionService {
     private final GameSessionRepository repository;
     private final Clock clock;
+    private final SessionEventPublisher eventPublisher;
 
     public GameSessionService(GameSessionRepository repository, Clock clock) {
+        this(repository, clock, NoOpSessionEventPublisher.INSTANCE);
+    }
+
+    public GameSessionService(
+        GameSessionRepository repository,
+        Clock clock,
+        SessionEventPublisher eventPublisher
+    ) {
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher must not be null");
     }
 
     public GameSession createSession(CreateSessionCommand command) {
@@ -31,15 +46,25 @@ public final class GameSessionService {
         Instant now = clock.instant();
         GameSession session = GameSession.create(command.sessionName(), command.shipName(), command.hostDisplayName(), now);
         session.transitionTo(SessionStatus.WAITING_FOR_PLAYERS, now);
-        return repository.save(session);
+        GameSession saved = repository.save(session);
+        publish(saved.id(), SessionEventType.SESSION_CREATED, now, Map.of(
+            "hostPlayerId", saved.hostPlayerId().toString(),
+            "status", saved.status().name()
+        ));
+        return saved;
     }
 
     public Player joinSession(JoinSessionCommand command) {
         Objects.requireNonNull(command, "command must not be null");
         GameSession session = requireSession(command.sessionId());
-        Player player = Player.crewMember(command.displayName(), clock.instant());
+        Instant now = clock.instant();
+        Player player = Player.crewMember(command.displayName(), now);
         session.addPlayer(player);
         repository.save(session);
+        publish(session.id(), SessionEventType.PLAYER_JOINED, now, Map.of(
+            "playerId", player.id().toString(),
+            "displayName", player.displayName()
+        ));
         return player;
     }
 
@@ -47,15 +72,25 @@ public final class GameSessionService {
         Objects.requireNonNull(command, "command must not be null");
         GameSession session = requireSession(command.sessionId());
         session.removePlayer(command.playerId());
-        return repository.save(session);
+        GameSession saved = repository.save(session);
+        publish(saved.id(), SessionEventType.PLAYER_LEFT, clock.instant(), Map.of(
+            "playerId", command.playerId().toString()
+        ));
+        return saved;
     }
 
     public GameSession assignStation(AssignStationCommand command) {
         Objects.requireNonNull(command, "command must not be null");
         GameSession session = requireSession(command.sessionId());
         requireHost(session, command.requestingPlayerId());
-        session.assignStation(command.station(), command.playerId(), clock.instant());
-        return repository.save(session);
+        Instant now = clock.instant();
+        session.assignStation(command.station(), command.playerId(), now);
+        GameSession saved = repository.save(session);
+        publish(saved.id(), SessionEventType.STATION_ASSIGNED, now, Map.of(
+            "station", command.station().name(),
+            "playerId", command.playerId().toString()
+        ));
+        return saved;
     }
 
     public GameSession unassignStation(UnassignStationCommand command) {
@@ -63,14 +98,23 @@ public final class GameSessionService {
         GameSession session = requireSession(command.sessionId());
         requireHost(session, command.requestingPlayerId());
         session.unassignStation(command.station());
-        return repository.save(session);
+        GameSession saved = repository.save(session);
+        publish(saved.id(), SessionEventType.STATION_UNASSIGNED, clock.instant(), Map.of(
+            "station", command.station().name()
+        ));
+        return saved;
     }
 
     public GameSession markReady(UUID sessionId, UUID requestingPlayerId) {
         GameSession session = requireSession(sessionId);
         requireHost(session, requestingPlayerId);
-        session.transitionTo(SessionStatus.READY, clock.instant());
-        return repository.save(session);
+        Instant now = clock.instant();
+        session.transitionTo(SessionStatus.READY, now);
+        GameSession saved = repository.save(session);
+        publish(saved.id(), SessionEventType.SESSION_READY, now, Map.of(
+            "status", saved.status().name()
+        ));
+        return saved;
     }
 
     public GameSession startSession(StartSessionCommand command) {
@@ -80,11 +124,20 @@ public final class GameSessionService {
         Instant now = clock.instant();
         session.transitionTo(SessionStatus.STARTING, now);
         session.transitionTo(SessionStatus.RUNNING, now);
-        return repository.save(session);
+        GameSession saved = repository.save(session);
+        publish(saved.id(), SessionEventType.SESSION_STARTED, now, Map.of(
+            "status", saved.status().name(),
+            "startedAt", saved.startedAt().orElseThrow().toString()
+        ));
+        return saved;
     }
 
     public GameSession getSession(UUID sessionId) { return requireSession(sessionId); }
     public List<GameSession> listSessions() { return repository.findAll(); }
+
+    private void publish(UUID sessionId, SessionEventType type, Instant occurredAt, Map<String, Object> payload) {
+        eventPublisher.publish(new SessionEvent(sessionId, type, occurredAt, payload));
+    }
 
     private GameSession requireSession(UUID sessionId) {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
