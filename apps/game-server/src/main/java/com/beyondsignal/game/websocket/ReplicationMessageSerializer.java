@@ -4,6 +4,7 @@ import com.beyondsignal.game.service.event.SessionEvent;
 import com.beyondsignal.game.service.event.SessionEventType;
 import com.beyondsignal.game.simulation.ShipState;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
 
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +30,9 @@ public final class ReplicationMessageSerializer {
                 .put("shieldsRaised", requiredBoolean(payload, "shieldsRaised"))
                 .put("weaponCooldownTicks", requiredNumber(payload, "weaponCooldownTicks").intValue())
                 .put("shotsFired", requiredLong(payload, "shotsFired"))
+                .put("combatContacts", new JsonArray(requiredList(payload, "combatContacts")))
+                .put("lastCombatEvent", payload.get("lastCombatEvent") == null
+                    ? null : new JsonObject(requiredMap(payload, "lastCombatEvent")))
                 .put("selectedTargetId", payload.get("selectedTargetId"));
         }
 
@@ -50,6 +54,21 @@ public final class ReplicationMessageSerializer {
             .put("shieldsRaised", state.shieldsRaised())
             .put("weaponCooldownTicks", state.weaponCooldownTicks())
             .put("shotsFired", state.shotsFired())
+            .put("combatContacts", new JsonArray(state.combatContacts().values().stream()
+                .map(contact -> new JsonObject()
+                    .put("id", contact.id().toString())
+                    .put("displayName", contact.displayName())
+                    .put("shieldStrength", contact.shieldStrength())
+                    .put("hullIntegrity", contact.hullIntegrity())
+                    .put("destroyed", contact.destroyed()))
+                .toList()))
+            .put("lastCombatEvent", state.lastCombatEvent() == null ? null : new JsonObject()
+                .put("sequence", state.lastCombatEvent().sequence())
+                .put("targetId", state.lastCombatEvent().targetId().toString())
+                .put("weapon", state.lastCombatEvent().weapon())
+                .put("shieldDamage", state.lastCombatEvent().shieldDamage())
+                .put("hullDamage", state.lastCombatEvent().hullDamage())
+                .put("targetDestroyed", state.lastCombatEvent().targetDestroyed()))
             .put("selectedTargetId", state.selectedTargetId() == null ? null : state.selectedTargetId().toString());
     }
 
@@ -82,6 +101,15 @@ public final class ReplicationMessageSerializer {
             throw new IllegalArgumentException("Missing or invalid replication field: " + name);
         }
         return number;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static java.util.List<Object> requiredList(Map<String, Object> payload, String name) {
+        Object value = payload.get(name);
+        if (!(value instanceof java.util.List<?> list)) {
+            throw new IllegalArgumentException("Missing or invalid replication field: " + name);
+        }
+        return (java.util.List<Object>) list;
     }
 
     @SuppressWarnings("unchecked")

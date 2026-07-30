@@ -60,7 +60,8 @@ class ReplicationConnectionTest {
                 "throttle", 0,
                 "shieldsRaised", false,
                 "weaponCooldownTicks", 0,
-                "shotsFired", 0L
+                "shotsFired", 0L,
+                "combatContacts", java.util.List.of()
             )
         );
     }

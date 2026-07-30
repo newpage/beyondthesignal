@@ -3,6 +3,7 @@ package com.beyondsignal.game.simulation;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -17,6 +18,8 @@ public record ShipState(
     UUID selectedTargetId,
     int weaponCooldownTicks,
     long shotsFired,
+    Map<UUID, CombatContactState> combatContacts,
+    CombatEventState lastCombatEvent,
     Map<ShipSubsystem, SubsystemState> subsystems
 ) {
     public ShipState {
@@ -40,6 +43,16 @@ public record ShipState(
             throw new IllegalArgumentException("shotsFired must not be negative");
         }
 
+        Map<UUID, CombatContactState> contactCopy = Map.copyOf(
+            Objects.requireNonNull(combatContacts, "combatContacts must not be null")
+        );
+        for (Map.Entry<UUID, CombatContactState> entry : contactCopy.entrySet()) {
+            if (!entry.getKey().equals(entry.getValue().id())) {
+                throw new IllegalArgumentException("combat contact key must match contact id");
+            }
+        }
+        combatContacts = contactCopy;
+
         EnumMap<ShipSubsystem, SubsystemState> copy = new EnumMap<>(ShipSubsystem.class);
         copy.putAll(Objects.requireNonNull(subsystems, "subsystems must not be null"));
         for (ShipSubsystem subsystem : ShipSubsystem.values()) {
@@ -58,6 +71,17 @@ public record ShipState(
         systems.put(ShipSubsystem.WEAPONS, SubsystemState.nominal(15));
         systems.put(ShipSubsystem.LIFE_SUPPORT, SubsystemState.nominal(10));
 
-        return new ShipState(sessionId, 0, Vector3.ZERO, Vector3.ZERO, 0.0, 0, false, null, 0, 0, systems);
+        UUID trainingTargetId = UUID.nameUUIDFromBytes(
+            ("training-contact:" + sessionId).getBytes(StandardCharsets.UTF_8)
+        );
+        Map<UUID, CombatContactState> contacts = Map.of(
+            trainingTargetId,
+            CombatContactState.trainingDrone(trainingTargetId)
+        );
+
+        return new ShipState(
+            sessionId, 0, Vector3.ZERO, Vector3.ZERO, 0.0, 0, false, null,
+            0, 0, contacts, null, systems
+        );
     }
 }

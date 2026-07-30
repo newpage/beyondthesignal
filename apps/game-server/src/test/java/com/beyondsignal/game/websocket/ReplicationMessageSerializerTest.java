@@ -18,22 +18,39 @@ class ReplicationMessageSerializerTest {
     @Test
     void serializesVersionedShipStateUpdate() {
         UUID sessionId = UUID.randomUUID();
+        Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("tick", 42L);
+        payload.put("position", Map.of("x", 1.0, "y", 2.0, "z", 3.0));
+        payload.put("velocity", Map.of("x", 4.0, "y", 5.0, "z", 6.0));
+        payload.put("headingDegrees", 90.0);
+        payload.put("throttle", 75);
+        payload.put("shieldsRaised", true);
+        payload.put("weaponCooldownTicks", 6);
+        payload.put("shotsFired", 12L);
+        payload.put("combatContacts", java.util.List.of(Map.of(
+            "id", "d4d0be92-df30-49c8-b642-f9f3c901ec46",
+            "displayName", "Training Drone",
+            "shieldStrength", 15,
+            "hullIntegrity", 100,
+            "destroyed", false
+        )));
+        payload.put("lastCombatEvent", Map.of(
+            "sequence", 12L,
+            "targetId", "d4d0be92-df30-49c8-b642-f9f3c901ec46",
+            "weapon", "PHASER",
+            "shieldDamage", 25,
+            "hullDamage", 0,
+            "targetDestroyed", false
+        ));
+        payload.put("selectedTargetId", "d4d0be92-df30-49c8-b642-f9f3c901ec46");
+
         SessionEvent event = new SessionEvent(
             sessionId,
             SessionEventType.SHIP_STATE_UPDATED,
             Instant.parse("2026-07-30T00:00:00Z"),
-            Map.of(
-                "tick", 42L,
-                "position", Map.of("x", 1.0, "y", 2.0, "z", 3.0),
-                "velocity", Map.of("x", 4.0, "y", 5.0, "z", 6.0),
-                "headingDegrees", 90.0,
-                "throttle", 75,
-                "shieldsRaised", true,
-                "weaponCooldownTicks", 6,
-                "shotsFired", 12L,
-                "selectedTargetId", "d4d0be92-df30-49c8-b642-f9f3c901ec46"
-            )
+            Map.copyOf(payload)
         );
+
 
         JsonObject json = serializer.serialize(event);
 
@@ -47,6 +64,8 @@ class ReplicationMessageSerializerTest {
         assertThat(json.getBoolean("shieldsRaised")).isTrue();
         assertThat(json.getInteger("weaponCooldownTicks")).isEqualTo(6);
         assertThat(json.getLong("shotsFired")).isEqualTo(12L);
+        assertThat(json.getJsonArray("combatContacts").size()).isEqualTo(1);
+        assertThat(json.getJsonObject("lastCombatEvent").getInteger("shieldDamage")).isEqualTo(25);
         assertThat(json.getString("selectedTargetId"))
             .isEqualTo("d4d0be92-df30-49c8-b642-f9f3c901ec46");
     }
@@ -63,6 +82,8 @@ class ReplicationMessageSerializerTest {
         assertThat(json.getBoolean("shieldsRaised")).isFalse();
         assertThat(json.getInteger("weaponCooldownTicks")).isZero();
         assertThat(json.getLong("shotsFired")).isZero();
+        assertThat(json.getJsonArray("combatContacts").size()).isEqualTo(1);
+        assertThat(json.getJsonObject("lastCombatEvent")).isNull();
         assertThat(json.getString("selectedTargetId")).isNull();
     }
 }

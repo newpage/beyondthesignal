@@ -55,6 +55,28 @@ public final class BridgeDebugSnapshotFactory {
         }
 
         var state = diagnostics.state();
+
+        JsonArray combatContacts = new JsonArray();
+        state.combatContacts().values().stream()
+            .sorted(Comparator.comparing(contact -> contact.displayName()))
+            .map(contact -> new JsonObject()
+                .put("id", contact.id().toString())
+                .put("displayName", contact.displayName())
+                .put("shieldStrength", contact.shieldStrength())
+                .put("hullIntegrity", contact.hullIntegrity())
+                .put("destroyed", contact.destroyed()))
+            .forEach(combatContacts::add);
+
+        JsonObject lastCombatEvent = null;
+        if (state.lastCombatEvent() != null) {
+            lastCombatEvent = new JsonObject()
+                .put("sequence", state.lastCombatEvent().sequence())
+                .put("targetId", state.lastCombatEvent().targetId().toString())
+                .put("weapon", state.lastCombatEvent().weapon())
+                .put("shieldDamage", state.lastCombatEvent().shieldDamage())
+                .put("hullDamage", state.lastCombatEvent().hullDamage())
+                .put("targetDestroyed", state.lastCombatEvent().targetDestroyed());
+        }
         return new JsonObject()
             .put("session", new JsonObject()
                 .put("id", session.id().toString())
@@ -78,6 +100,8 @@ public final class BridgeDebugSnapshotFactory {
                 .put("weaponsReady", state.weaponCooldownTicks() == 0)
                 .put("shotsFired", state.shotsFired())
                 .put("selectedTargetId", state.selectedTargetId() == null ? null : state.selectedTargetId().toString())
+                .put("combatContacts", combatContacts)
+                .put("lastCombatEvent", lastCombatEvent)
                 .put("subsystems", subsystems))
             .put("runtime", new JsonObject()
                 .put("configuredTickRateHz", diagnostics.configuredTickRateHz())

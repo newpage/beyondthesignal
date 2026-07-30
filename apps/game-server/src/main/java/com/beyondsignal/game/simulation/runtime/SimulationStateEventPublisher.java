@@ -4,10 +4,12 @@ import com.beyondsignal.game.service.event.SessionEvent;
 import com.beyondsignal.game.service.event.SessionEventPublisher;
 import com.beyondsignal.game.service.event.SessionEventType;
 import com.beyondsignal.game.simulation.ShipState;
+import com.beyondsignal.game.simulation.CombatContactState;
 
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 
 public final class SimulationStateEventPublisher implements SimulationStateListener {
@@ -42,6 +44,19 @@ public final class SimulationStateEventPublisher implements SimulationStateListe
         payload.put("shieldsRaised", state.shieldsRaised());
         payload.put("weaponCooldownTicks", state.weaponCooldownTicks());
         payload.put("shotsFired", state.shotsFired());
+        payload.put("combatContacts", state.combatContacts().values().stream()
+            .map(SimulationStateEventPublisher::contactPayload)
+            .toList());
+        if (state.lastCombatEvent() != null) {
+            Map<String, Object> combatEvent = new LinkedHashMap<>();
+            combatEvent.put("sequence", state.lastCombatEvent().sequence());
+            combatEvent.put("targetId", state.lastCombatEvent().targetId().toString());
+            combatEvent.put("weapon", state.lastCombatEvent().weapon());
+            combatEvent.put("shieldDamage", state.lastCombatEvent().shieldDamage());
+            combatEvent.put("hullDamage", state.lastCombatEvent().hullDamage());
+            combatEvent.put("targetDestroyed", state.lastCombatEvent().targetDestroyed());
+            payload.put("lastCombatEvent", Map.copyOf(combatEvent));
+        }
         if (state.selectedTargetId() != null) {
             payload.put("selectedTargetId", state.selectedTargetId().toString());
         }
@@ -52,5 +67,15 @@ public final class SimulationStateEventPublisher implements SimulationStateListe
             clock.instant(),
             Map.copyOf(payload)
         ));
+    }
+
+    private static Map<String, Object> contactPayload(CombatContactState contact) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("id", contact.id().toString());
+        payload.put("displayName", contact.displayName());
+        payload.put("shieldStrength", contact.shieldStrength());
+        payload.put("hullIntegrity", contact.hullIntegrity());
+        payload.put("destroyed", contact.destroyed());
+        return Map.copyOf(payload);
     }
 }

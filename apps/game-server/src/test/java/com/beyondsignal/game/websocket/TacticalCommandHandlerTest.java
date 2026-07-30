@@ -77,7 +77,7 @@ class TacticalCommandHandlerTest {
 
     @Test
     void acceptsTargetSelectionAndClearCommands() {
-        UUID targetId = UUID.randomUUID();
+        UUID targetId = ShipState.initial(session.id()).combatContacts().keySet().iterator().next();
         List<JsonObject> responses = new ArrayList<>();
 
         handler.handle(session.id(), new JsonObject()
@@ -99,9 +99,10 @@ class TacticalCommandHandlerTest {
 
     @Test
     void acceptsFireWeaponWhenTargetSelectedAndWeaponsReady() {
-        UUID targetId = UUID.randomUUID();
+        ShipState initial = ShipState.initial(session.id());
+        UUID targetId = initial.combatContacts().keySet().iterator().next();
         ShipState targeted = new com.beyondsignal.game.simulation.ShipSimulationEngine().tick(
-            ShipState.initial(session.id()),
+            initial,
             List.of(new SelectTargetCommand(targetId)),
             java.time.Duration.ofMillis(50)
         );
@@ -148,6 +149,20 @@ class TacticalCommandHandlerTest {
         assertThat(commandGateway.commands).isEmpty();
         assertThat(responses.getFirst().getString("type")).isEqualTo("COMMAND_REJECTED");
         assertThat(responses.getFirst().getString("message")).contains("TACTICAL");
+    }
+
+    @Test
+    void rejectsUnknownCombatTarget() {
+        List<JsonObject> responses = new ArrayList<>();
+
+        handler.handle(session.id(), new JsonObject()
+            .put("type", "SELECT_TARGET")
+            .put("playerId", tacticalPlayer.id().toString())
+            .put("targetId", UUID.randomUUID().toString()), responses::add);
+
+        assertThat(commandGateway.commands).isEmpty();
+        assertThat(responses.getFirst().getString("type")).isEqualTo("COMMAND_REJECTED");
+        assertThat(responses.getFirst().getString("message")).contains("not available");
     }
 
     @Test

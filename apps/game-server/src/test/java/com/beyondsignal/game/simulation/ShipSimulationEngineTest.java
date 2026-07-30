@@ -61,10 +61,11 @@ class ShipSimulationEngineTest {
 
     @Test
     void appliesTacticalShieldAndTargetCommandsAuthoritatively() {
-        UUID targetId = UUID.randomUUID();
+        ShipState initial = ShipState.initial(UUID.randomUUID());
+        UUID targetId = initial.combatContacts().keySet().iterator().next();
 
         ShipState selected = engine.tick(
-            ShipState.initial(UUID.randomUUID()),
+            initial,
             List.of(new SetShieldsCommand(true), new SelectTargetCommand(targetId)),
             Duration.ofMillis(50)
         );
@@ -85,9 +86,10 @@ class ShipSimulationEngineTest {
 
     @Test
     void firesPhaserAndAppliesAuthoritativeCooldown() {
-        UUID targetId = UUID.randomUUID();
+        ShipState initial = ShipState.initial(UUID.randomUUID());
+        UUID targetId = initial.combatContacts().keySet().iterator().next();
         ShipState targeted = engine.tick(
-            ShipState.initial(UUID.randomUUID()),
+            initial,
             List.of(new SelectTargetCommand(targetId)),
             Duration.ofMillis(50)
         );
@@ -100,6 +102,11 @@ class ShipSimulationEngineTest {
 
         assertThat(fired.shotsFired()).isEqualTo(1);
         assertThat(fired.weaponCooldownTicks()).isEqualTo(ShipSimulationEngine.PHASER_COOLDOWN_TICKS);
+        CombatContactState damaged = fired.combatContacts().get(targetId);
+        assertThat(damaged.shieldStrength()).isEqualTo(15);
+        assertThat(damaged.hullIntegrity()).isEqualTo(100);
+        assertThat(fired.lastCombatEvent().shieldDamage()).isEqualTo(25);
+        assertThat(fired.lastCombatEvent().hullDamage()).isZero();
 
         ShipState duplicateDuringCooldown = engine.tick(
             fired,
@@ -109,6 +116,27 @@ class ShipSimulationEngineTest {
         assertThat(duplicateDuringCooldown.shotsFired()).isEqualTo(1);
         assertThat(duplicateDuringCooldown.weaponCooldownTicks())
             .isEqualTo(ShipSimulationEngine.PHASER_COOLDOWN_TICKS - 1);
+    }
+
+    @Test
+    void destroysTargetAfterShieldAndHullDamageAndClearsSelection() {
+        ShipState state = ShipState.initial(UUID.randomUUID());
+        UUID targetId = state.combatContacts().keySet().iterator().next();
+        state = engine.tick(state, List.of(new SelectTargetCommand(targetId)), Duration.ofMillis(50));
+
+        for (int shot = 0; shot < 6; shot++) {
+            while (state.weaponCooldownTicks() > 0) {
+                state = engine.tick(state, List.of(), Duration.ofMillis(50));
+            }
+            state = engine.tick(state, List.of(new FireWeaponCommand("PHASER")), Duration.ofMillis(50));
+        }
+
+        CombatContactState destroyed = state.combatContacts().get(targetId);
+        assertThat(destroyed.shieldStrength()).isZero();
+        assertThat(destroyed.hullIntegrity()).isZero();
+        assertThat(destroyed.destroyed()).isTrue();
+        assertThat(state.selectedTargetId()).isNull();
+        assertThat(state.lastCombatEvent().targetDestroyed()).isTrue();
     }
 
     @Test

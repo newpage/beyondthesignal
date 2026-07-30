@@ -9,6 +9,7 @@ import java.util.Objects;
 public final class ShipSimulationEngine {
     private static final double MAX_SPEED_UNITS_PER_SECOND = 100.0;
     public static final int PHASER_COOLDOWN_TICKS = 10;
+    public static final int PHASER_DAMAGE = 25;
 
     public ShipState tick(ShipState current, List<? extends ShipCommand> commands, Duration elapsed) {
         Objects.requireNonNull(current, "current must not be null");
@@ -25,6 +26,9 @@ public final class ShipSimulationEngine {
         java.util.UUID selectedTargetId = current.selectedTargetId();
         int weaponCooldownTicks = Math.max(0, current.weaponCooldownTicks() - 1);
         long shotsFired = current.shotsFired();
+        java.util.Map<java.util.UUID, CombatContactState> combatContacts =
+            new java.util.LinkedHashMap<>(current.combatContacts());
+        CombatEventState lastCombatEvent = current.lastCombatEvent();
         EnumMap<ShipSubsystem, SubsystemState> subsystems =
             new EnumMap<>(current.subsystems());
 
@@ -34,12 +38,41 @@ public final class ShipSimulationEngine {
                 case SetHeadingCommand setHeading -> heading = setHeading.normalizedHeading();
                 case SetThrottleCommand setThrottle -> throttle = setThrottle.throttle();
                 case SetShieldsCommand setShields -> shieldsRaised = setShields.raised();
-                case SelectTargetCommand selectTarget -> selectedTargetId = selectTarget.targetId();
+                case SelectTargetCommand selectTarget -> {
+                    CombatContactState contact = combatContacts.get(selectTarget.targetId());
+                    if (contact != null && !contact.destroyed()) {
+                        selectedTargetId = selectTarget.targetId();
+                    }
+                }
                 case ClearTargetCommand ignored -> selectedTargetId = null;
-                case FireWeaponCommand ignored -> {
-                    if (selectedTargetId != null && weaponCooldownTicks == 0) {
+                case FireWeaponCommand fireWeapon -> {
+                    CombatContactState target = selectedTargetId == null
+                        ? null
+                        : combatContacts.get(selectedTargetId);
+                    if (target != null && !target.destroyed() && weaponCooldownTicks == 0) {
+                        int shieldDamage = Math.min(target.shieldStrength(), PHASER_DAMAGE);
+                        int remainingDamage = PHASER_DAMAGE - shieldDamage;
+                        int hullDamage = Math.min(target.hullIntegrity(), remainingDamage);
+                        int newShield = target.shieldStrength() - shieldDamage;
+                        int newHull = target.hullIntegrity() - hullDamage;
+                        boolean destroyed = newHull == 0;
+
+                        combatContacts.put(target.id(), new CombatContactState(
+                            target.id(), target.displayName(), newShield, newHull, destroyed
+                        ));
                         shotsFired++;
                         weaponCooldownTicks = PHASER_COOLDOWN_TICKS;
+                        lastCombatEvent = new CombatEventState(
+                            shotsFired,
+                            target.id(),
+                            fireWeapon.weapon(),
+                            shieldDamage,
+                            hullDamage,
+                            destroyed
+                        );
+                        if (destroyed) {
+                            selectedTargetId = null;
+                        }
                     }
                 }
                 case AllocatePowerCommand allocatePower -> {
@@ -82,6 +115,8 @@ public final class ShipSimulationEngine {
             selectedTargetId,
             weaponCooldownTicks,
             shotsFired,
+            combatContacts,
+            lastCombatEvent,
             subsystems
         );
     }

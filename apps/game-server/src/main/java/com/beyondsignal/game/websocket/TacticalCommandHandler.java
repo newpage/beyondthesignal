@@ -43,6 +43,9 @@ public final class TacticalCommandHandler {
             GameSession session = sessionService.getSession(sessionId);
             authorizeTactical(session, playerId);
             ShipCommand command = decode(request);
+            if (command instanceof SelectTargetCommand selectTarget) {
+                validateTarget(sessionId, selectTarget.targetId());
+            }
             if (command instanceof FireWeaponCommand) {
                 validateFireState(sessionId);
             }
@@ -70,11 +73,27 @@ public final class TacticalCommandHandler {
     }
 
 
+    private void validateTarget(UUID sessionId, UUID targetId) {
+        var state = stateProvider.findState(sessionId)
+            .orElseThrow(() -> new CommandAuthorizationException("Simulation is not running"));
+        var target = state.combatContacts().get(targetId);
+        if (target == null) {
+            throw new CommandAuthorizationException("Combat target is not available");
+        }
+        if (target.destroyed()) {
+            throw new CommandAuthorizationException("Combat target has been destroyed");
+        }
+    }
+
     private void validateFireState(UUID sessionId) {
         var state = stateProvider.findState(sessionId)
             .orElseThrow(() -> new CommandAuthorizationException("Simulation is not running"));
         if (state.selectedTargetId() == null) {
             throw new CommandAuthorizationException("No tactical target is selected");
+        }
+        var target = state.combatContacts().get(state.selectedTargetId());
+        if (target == null || target.destroyed()) {
+            throw new CommandAuthorizationException("Selected tactical target is not available");
         }
         if (state.weaponCooldownTicks() > 0) {
             throw new CommandAuthorizationException(
