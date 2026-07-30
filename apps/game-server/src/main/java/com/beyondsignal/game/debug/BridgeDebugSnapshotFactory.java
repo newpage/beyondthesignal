@@ -67,6 +67,33 @@ public final class BridgeDebugSnapshotFactory {
                 .put("destroyed", contact.destroyed()))
             .forEach(combatContacts::add);
 
+        JsonArray worldObjects = new JsonArray();
+        state.worldObjects().values().stream()
+            .sorted(Comparator.comparing(object -> object.displayName()))
+            .map(object -> new JsonObject()
+                .put("id", object.id().toString())
+                .put("displayName", object.displayName())
+                .put("type", object.type())
+                .put("hostile", object.hostile())
+                .put("position", vector(object.position().x(), object.position().y(), object.position().z()))
+                .put("velocity", vector(object.velocity().x(), object.velocity().y(), object.velocity().z())))
+            .forEach(worldObjects::add);
+
+        JsonObject mission = new JsonObject()
+            .put("id", state.mission().id().toString())
+            .put("title", state.mission().title())
+            .put("objective", state.mission().objective())
+            .put("status", state.mission().status().name())
+            .put("score", state.mission().score())
+            .put("startedAtTick", state.mission().startedAtTick())
+            .put("completedAtTick", state.mission().completedAtTick());
+
+        JsonObject crewAdvisory = new JsonObject()
+            .put("sequence", state.crewAdvisory().sequence())
+            .put("station", state.crewAdvisory().station())
+            .put("severity", state.crewAdvisory().severity())
+            .put("message", state.crewAdvisory().message());
+
         JsonObject lastCombatEvent = null;
         if (state.lastCombatEvent() != null) {
             lastCombatEvent = new JsonObject()
@@ -104,6 +131,9 @@ public final class BridgeDebugSnapshotFactory {
                 .put("scansCompleted", state.scansCompleted())
                 .put("selectedTargetId", state.selectedTargetId() == null ? null : state.selectedTargetId().toString())
                 .put("combatContacts", combatContacts)
+                .put("worldObjects", worldObjects)
+                .put("mission", mission)
+                .put("crewAdvisory", crewAdvisory)
                 .put("lastCombatEvent", lastCombatEvent)
                 .put("subsystems", subsystems))
             .put("runtime", new JsonObject()

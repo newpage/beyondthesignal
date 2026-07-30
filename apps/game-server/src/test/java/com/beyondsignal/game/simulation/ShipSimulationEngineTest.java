@@ -199,6 +199,54 @@ class ShipSimulationEngineTest {
         assertThat(state.sensorCooldownTicks()).isEqualTo(ShipSimulationEngine.SENSOR_SCAN_COOLDOWN_TICKS - 1);
     }
 
+
+    @Test
+    void advancesNpcWorldObjectsDeterministically() {
+        ShipState initial = ShipState.initial(UUID.randomUUID());
+        WorldObjectState npc = initial.worldObjects().values().stream()
+            .filter(object -> object.type().equals("NPC_SHIP"))
+            .findFirst()
+            .orElseThrow();
+
+        ShipState next = engine.tick(initial, List.of(), Duration.ofSeconds(2));
+        WorldObjectState advanced = next.worldObjects().get(npc.id());
+
+        assertThat(advanced.position().x()).isEqualTo(npc.position().x() - 4.0);
+        assertThat(advanced.position().y()).isEqualTo(npc.position().y() + 2.0);
+    }
+
+    @Test
+    void completesMissionAndPublishesCrewAdvisoryWhenTargetIsDestroyed() {
+        ShipState state = ShipState.initial(UUID.randomUUID());
+        UUID targetId = state.combatContacts().keySet().iterator().next();
+        state = engine.tick(state, List.of(new SelectTargetCommand(targetId)), Duration.ofMillis(50));
+
+        for (int shot = 0; shot < 6; shot++) {
+            while (state.weaponCooldownTicks() > 0) {
+                state = engine.tick(state, List.of(), Duration.ofMillis(50));
+            }
+            state = engine.tick(state, List.of(new FireWeaponCommand("PHASER")), Duration.ofMillis(50));
+        }
+
+        assertThat(state.mission().status()).isEqualTo(MissionStatus.COMPLETED);
+        assertThat(state.mission().score()).isEqualTo(1000);
+        assertThat(state.mission().completedAtTick()).isEqualTo(state.tick());
+        assertThat(state.crewAdvisory().severity()).isEqualTo("SUCCESS");
+        assertThat(state.crewAdvisory().message()).contains("Mission complete");
+    }
+
+    @Test
+    void scienceScanGeneratesCrewAdvisory() {
+        ShipState next = engine.tick(
+            ShipState.initial(UUID.randomUUID()),
+            List.of(new ScanContactsCommand()),
+            Duration.ofMillis(50)
+        );
+
+        assertThat(next.crewAdvisory().station()).isEqualTo("SCIENCE");
+        assertThat(next.crewAdvisory().message()).contains("Hostile NPC ship");
+    }
+
     private static org.assertj.core.data.Offset<Double> within(double value) {
         return org.assertj.core.data.Offset.offset(value);
     }

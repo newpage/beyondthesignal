@@ -35,6 +35,10 @@ public final class ShipSimulationEngine {
         long scansCompleted = current.scansCompleted();
         EnumMap<ShipSubsystem, SubsystemState> subsystems =
             new EnumMap<>(current.subsystems());
+        java.util.Map<java.util.UUID, WorldObjectState> worldObjects =
+            new java.util.LinkedHashMap<>(current.worldObjects());
+        MissionState mission = current.mission();
+        CrewAdvisory crewAdvisory = current.crewAdvisory();
 
         for (ShipCommand command : commands) {
             Objects.requireNonNull(command, "commands must not contain null");
@@ -115,9 +119,45 @@ public final class ShipSimulationEngine {
         double seconds = elapsed.toNanos() / 1_000_000_000.0;
         Vector3 position = current.position().add(velocity.scale(seconds));
 
+        worldObjects.replaceAll((id, object) -> object.advance(seconds));
+        long nextTick = current.tick() + 1;
+        boolean targetDestroyed = combatContacts.values().stream()
+            .filter(contact -> contact.displayName().equals("Training Drone"))
+            .anyMatch(CombatContactState::destroyed);
+        if (targetDestroyed && mission.status() == MissionStatus.ACTIVE) {
+            mission = mission.complete(nextTick, 1000);
+            crewAdvisory = new CrewAdvisory(
+                crewAdvisory.sequence() + 1,
+                "CAPTAIN",
+                "SUCCESS",
+                "Mission complete. Training Drone destroyed. Return to Outpost Meridian."
+            );
+        } else if (redAlert && !current.redAlert()) {
+            crewAdvisory = new CrewAdvisory(
+                crewAdvisory.sequence() + 1,
+                "TACTICAL",
+                "WARNING",
+                "Red alert active. Recommend shields raised and weapons power at 20% or higher."
+            );
+        } else if (scansCompleted > current.scansCompleted()) {
+            crewAdvisory = new CrewAdvisory(
+                crewAdvisory.sequence() + 1,
+                "SCIENCE",
+                "INFO",
+                "Scan complete. Hostile NPC ship identified near bearing 006."
+            );
+        } else if (subsystems.get(ShipSubsystem.ENGINES).powerAllocation() < 15) {
+            crewAdvisory = new CrewAdvisory(
+                crewAdvisory.sequence() + 1,
+                "ENGINEERING",
+                "WARNING",
+                "Engine power is below maneuvering recommendation."
+            );
+        }
+
         return new ShipState(
             current.sessionId(),
-            current.tick() + 1,
+            nextTick,
             position,
             velocity,
             heading,
@@ -131,7 +171,10 @@ public final class ShipSimulationEngine {
             redAlert,
             sensorCooldownTicks,
             scansCompleted,
-            subsystems
+            subsystems,
+            worldObjects,
+            mission,
+            crewAdvisory
         );
     }
 

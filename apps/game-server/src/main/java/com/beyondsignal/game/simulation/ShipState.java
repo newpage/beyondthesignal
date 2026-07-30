@@ -23,7 +23,10 @@ public record ShipState(
     boolean redAlert,
     int sensorCooldownTicks,
     long scansCompleted,
-    Map<ShipSubsystem, SubsystemState> subsystems
+    Map<ShipSubsystem, SubsystemState> subsystems,
+    Map<UUID, WorldObjectState> worldObjects,
+    MissionState mission,
+    CrewAdvisory crewAdvisory
 ) {
     public ShipState {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
@@ -70,6 +73,18 @@ public record ShipState(
             }
         }
         subsystems = Collections.unmodifiableMap(copy);
+
+        Map<UUID, WorldObjectState> worldCopy = Map.copyOf(
+            Objects.requireNonNull(worldObjects, "worldObjects must not be null")
+        );
+        for (Map.Entry<UUID, WorldObjectState> entry : worldCopy.entrySet()) {
+            if (!entry.getKey().equals(entry.getValue().id())) {
+                throw new IllegalArgumentException("world object key must match object id");
+            }
+        }
+        worldObjects = worldCopy;
+        Objects.requireNonNull(mission, "mission must not be null");
+        Objects.requireNonNull(crewAdvisory, "crewAdvisory must not be null");
     }
 
     public static ShipState initial(UUID sessionId) {
@@ -87,10 +102,29 @@ public record ShipState(
             trainingTargetId,
             CombatContactState.trainingDrone(trainingTargetId)
         );
+        UUID starId = UUID.nameUUIDFromBytes(("star:" + sessionId).getBytes(StandardCharsets.UTF_8));
+        UUID stationId = UUID.nameUUIDFromBytes(("station:" + sessionId).getBytes(StandardCharsets.UTF_8));
+        UUID droneWorldId = trainingTargetId;
+        Map<UUID, WorldObjectState> world = Map.of(
+            starId, new WorldObjectState(starId, "Helios", "STAR", new Vector3(2500, 0, 0), Vector3.ZERO, false),
+            stationId, new WorldObjectState(stationId, "Outpost Meridian", "STATION", new Vector3(500, 800, 0), Vector3.ZERO, false),
+            droneWorldId, new WorldObjectState(droneWorldId, "Training Drone", "NPC_SHIP", new Vector3(1000, 100, 0), new Vector3(-2, 1, 0), true)
+        );
+        UUID missionId = UUID.nameUUIDFromBytes(("mission:" + sessionId).getBytes(StandardCharsets.UTF_8));
+        MissionState mission = new MissionState(
+            missionId,
+            "First Contact Drill",
+            "Locate and destroy the hostile Training Drone",
+            MissionStatus.ACTIVE,
+            0,
+            0,
+            null
+        );
+        CrewAdvisory advisory = new CrewAdvisory(0, "CAPTAIN", "INFO", "Mission initialized. Awaiting crew action.");
 
         return new ShipState(
             sessionId, 0, Vector3.ZERO, Vector3.ZERO, 0.0, 0, false, null,
-            0, 0, contacts, null, false, 0, 0, systems
+            0, 0, contacts, null, false, 0, 0, systems, world, mission, advisory
         );
     }
 }

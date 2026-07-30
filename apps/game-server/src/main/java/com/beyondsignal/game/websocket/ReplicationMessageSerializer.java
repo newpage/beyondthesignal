@@ -35,6 +35,9 @@ public final class ReplicationMessageSerializer {
                 .put("scansCompleted", payload.getOrDefault("scansCompleted", 0))
                 .put("subsystems", new JsonObject(optionalMap(payload, "subsystems")))
                 .put("combatContacts", new JsonArray(requiredList(payload, "combatContacts")))
+                .put("worldObjects", new JsonArray(optionalList(payload, "worldObjects")))
+                .put("mission", new JsonObject(optionalMap(payload, "mission")))
+                .put("crewAdvisory", new JsonObject(optionalMap(payload, "crewAdvisory")))
                 .put("lastCombatEvent", payload.get("lastCombatEvent") == null
                     ? null : new JsonObject(requiredMap(payload, "lastCombatEvent")))
                 .put("selectedTargetId", payload.get("selectedTargetId"));
@@ -73,6 +76,28 @@ public final class ReplicationMessageSerializer {
                     .put("hullIntegrity", contact.hullIntegrity())
                     .put("destroyed", contact.destroyed()))
                 .toList()))
+            .put("worldObjects", new JsonArray(state.worldObjects().values().stream()
+                .map(object -> new JsonObject()
+                    .put("id", object.id().toString())
+                    .put("displayName", object.displayName())
+                    .put("type", object.type())
+                    .put("position", vector(object.position().x(), object.position().y(), object.position().z()))
+                    .put("velocity", vector(object.velocity().x(), object.velocity().y(), object.velocity().z()))
+                    .put("hostile", object.hostile()))
+                .toList()))
+            .put("mission", new JsonObject()
+                .put("id", state.mission().id().toString())
+                .put("title", state.mission().title())
+                .put("objective", state.mission().objective())
+                .put("status", state.mission().status().name())
+                .put("score", state.mission().score())
+                .put("startedAtTick", state.mission().startedAtTick())
+                .put("completedAtTick", state.mission().completedAtTick()))
+            .put("crewAdvisory", new JsonObject()
+                .put("sequence", state.crewAdvisory().sequence())
+                .put("station", state.crewAdvisory().station())
+                .put("severity", state.crewAdvisory().severity())
+                .put("message", state.crewAdvisory().message()))
             .put("lastCombatEvent", state.lastCombatEvent() == null ? null : new JsonObject()
                 .put("sequence", state.lastCombatEvent().sequence())
                 .put("targetId", state.lastCombatEvent().targetId().toString())
@@ -118,6 +143,12 @@ public final class ReplicationMessageSerializer {
     private static Map<String, Object> optionalMap(Map<String, Object> payload, String name) {
         Object value = payload.get(name);
         return value instanceof Map<?, ?> map ? (Map<String, Object>) map : Map.of();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static java.util.List<Object> optionalList(Map<String, Object> payload, String name) {
+        Object value = payload.get(name);
+        return value instanceof java.util.List<?> list ? (java.util.List<Object>) list : java.util.List.of();
     }
 
     @SuppressWarnings("unchecked")

@@ -54,6 +54,16 @@ public final class SimulationStateEventPublisher implements SimulationStateListe
         payload.put("combatContacts", state.combatContacts().values().stream()
             .map(SimulationStateEventPublisher::contactPayload)
             .toList());
+        payload.put("worldObjects", state.worldObjects().values().stream()
+            .map(SimulationStateEventPublisher::worldObjectPayload)
+            .toList());
+        payload.put("mission", missionPayload(state));
+        payload.put("crewAdvisory", Map.of(
+            "sequence", state.crewAdvisory().sequence(),
+            "station", state.crewAdvisory().station(),
+            "severity", state.crewAdvisory().severity(),
+            "message", state.crewAdvisory().message()
+        ));
         if (state.lastCombatEvent() != null) {
             Map<String, Object> combatEvent = new LinkedHashMap<>();
             combatEvent.put("sequence", state.lastCombatEvent().sequence());
@@ -74,6 +84,29 @@ public final class SimulationStateEventPublisher implements SimulationStateListe
             clock.instant(),
             Map.copyOf(payload)
         ));
+    }
+
+    private static Map<String, Object> worldObjectPayload(com.beyondsignal.game.simulation.WorldObjectState object) {
+        return Map.of(
+            "id", object.id().toString(),
+            "displayName", object.displayName(),
+            "type", object.type(),
+            "position", Map.of("x", object.position().x(), "y", object.position().y(), "z", object.position().z()),
+            "velocity", Map.of("x", object.velocity().x(), "y", object.velocity().y(), "z", object.velocity().z()),
+            "hostile", object.hostile()
+        );
+    }
+
+    private static Map<String, Object> missionPayload(ShipState state) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("id", state.mission().id().toString());
+        payload.put("title", state.mission().title());
+        payload.put("objective", state.mission().objective());
+        payload.put("status", state.mission().status().name());
+        payload.put("score", state.mission().score());
+        payload.put("startedAtTick", state.mission().startedAtTick());
+        if (state.mission().completedAtTick() != null) payload.put("completedAtTick", state.mission().completedAtTick());
+        return Map.copyOf(payload);
     }
 
     private static Map<String, Object> contactPayload(CombatContactState contact) {
