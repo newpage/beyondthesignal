@@ -3,6 +3,11 @@ package com.beyondsignal.game;
 import com.beyondsignal.game.api.GameSessionRoutes;
 import com.beyondsignal.game.persistence.jooq.JooqGameSessionRepository;
 import com.beyondsignal.game.service.GameSessionService;
+import com.beyondsignal.game.simulation.ShipSimulationEngine;
+import com.beyondsignal.game.simulation.runtime.RuntimeSimulationSessionLifecycle;
+import com.beyondsignal.game.simulation.runtime.SimulationLoop;
+import com.beyondsignal.game.simulation.runtime.SimulationRuntime;
+import com.beyondsignal.game.simulation.runtime.SimulationStateEventPublisher;
 import com.beyondsignal.game.websocket.SessionEventHub;
 import com.beyondsignal.game.websocket.SessionWebSocketGateway;
 import io.vertx.core.AbstractVerticle;
@@ -26,6 +31,7 @@ import org.jooq.impl.DSL;
 import org.postgresql.ds.PGSimpleDataSource;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.Set;
 
 public final class PlatformVerticle extends AbstractVerticle {
@@ -37,6 +43,7 @@ public final class PlatformVerticle extends AbstractVerticle {
     private WebClient webClient;
     private HttpServer httpServer;
     private DSLContext dsl;
+    private SimulationLoop simulationLoop;
 
     public PlatformVerticle(Config config) {
         this.config = config;
@@ -46,11 +53,20 @@ public final class PlatformVerticle extends AbstractVerticle {
     public void start(Promise<Void> startPromise) {
         configureInfrastructure();
 
+        Clock clock = Clock.systemUTC();
         SessionEventHub eventHub = new SessionEventHub();
+        SimulationRuntime simulationRuntime = new SimulationRuntime(
+            new ShipSimulationEngine(),
+            Duration.ofMillis(50),
+            new SimulationStateEventPublisher(eventHub, clock)
+        );
+        simulationLoop = new SimulationLoop(simulationRuntime);
+
         GameSessionService gameSessionService = new GameSessionService(
             new JooqGameSessionRepository(dsl),
-            Clock.systemUTC(),
-            eventHub
+            clock,
+            eventHub,
+            new RuntimeSimulationSessionLifecycle(simulationRuntime)
         );
 
         Router router = Router.router(vertx);
@@ -67,6 +83,7 @@ public final class PlatformVerticle extends AbstractVerticle {
 
         httpServer.listen(config.port())
             .onSuccess(server -> {
+                simulationLoop.start();
                 System.out.println("HTTP and WebSocket server listening on " + server.actualPort());
                 startPromise.complete();
             })
@@ -181,6 +198,9 @@ public final class PlatformVerticle extends AbstractVerticle {
             : httpServer.close();
 
         serverClose.onComplete(ignored -> {
+            if (simulationLoop != null) {
+                simulationLoop.close();
+            }
             if (postgres != null) {
                 postgres.close();
             }

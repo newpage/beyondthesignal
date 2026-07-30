@@ -14,6 +14,8 @@ import com.beyondsignal.game.service.event.NoOpSessionEventPublisher;
 import com.beyondsignal.game.service.event.SessionEvent;
 import com.beyondsignal.game.service.event.SessionEventPublisher;
 import com.beyondsignal.game.service.event.SessionEventType;
+import com.beyondsignal.game.simulation.runtime.NoOpSimulationSessionLifecycle;
+import com.beyondsignal.game.simulation.runtime.SimulationSessionLifecycle;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -26,9 +28,10 @@ public final class GameSessionService {
     private final GameSessionRepository repository;
     private final Clock clock;
     private final SessionEventPublisher eventPublisher;
+    private final SimulationSessionLifecycle simulationLifecycle;
 
     public GameSessionService(GameSessionRepository repository, Clock clock) {
-        this(repository, clock, NoOpSessionEventPublisher.INSTANCE);
+        this(repository, clock, NoOpSessionEventPublisher.INSTANCE, NoOpSimulationSessionLifecycle.INSTANCE);
     }
 
     public GameSessionService(
@@ -36,9 +39,19 @@ public final class GameSessionService {
         Clock clock,
         SessionEventPublisher eventPublisher
     ) {
+        this(repository, clock, eventPublisher, NoOpSimulationSessionLifecycle.INSTANCE);
+    }
+
+    public GameSessionService(
+        GameSessionRepository repository,
+        Clock clock,
+        SessionEventPublisher eventPublisher,
+        SimulationSessionLifecycle simulationLifecycle
+    ) {
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
         this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher must not be null");
+        this.simulationLifecycle = Objects.requireNonNull(simulationLifecycle, "simulationLifecycle must not be null");
     }
 
     public GameSession createSession(CreateSessionCommand command) {
@@ -125,6 +138,7 @@ public final class GameSessionService {
         session.transitionTo(SessionStatus.STARTING, now);
         session.transitionTo(SessionStatus.RUNNING, now);
         GameSession saved = repository.save(session);
+        simulationLifecycle.start(saved.id());
         publish(saved.id(), SessionEventType.SESSION_STARTED, now, Map.of(
             "status", saved.status().name(),
             "startedAt", saved.startedAt().orElseThrow().toString()
