@@ -1,6 +1,7 @@
 package com.beyondsignal.game;
 
 import com.beyondsignal.game.api.GameSessionRoutes;
+import com.beyondsignal.game.debug.BridgeDebugRoutes;
 import com.beyondsignal.game.persistence.jooq.JooqGameSessionRepository;
 import com.beyondsignal.game.service.GameSessionService;
 import com.beyondsignal.game.simulation.ShipSimulationEngine;
@@ -73,6 +74,7 @@ public final class PlatformVerticle extends AbstractVerticle {
         configureCors(router);
         configurePlatformRoutes(router);
         new GameSessionRoutes(gameSessionService).mount(router);
+        new BridgeDebugRoutes(gameSessionService, simulationRuntime, eventHub).mount(router);
 
         SessionWebSocketGateway webSocketGateway =
             new SessionWebSocketGateway(gameSessionService, eventHub, simulationRuntime, simulationRuntime);

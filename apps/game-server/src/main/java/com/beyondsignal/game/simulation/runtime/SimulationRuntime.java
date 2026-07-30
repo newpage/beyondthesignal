@@ -64,7 +64,10 @@ public final class SimulationRuntime implements ShipStateProvider, ShipCommandGa
 
         synchronized (simulation) {
             List<ShipCommand> commands = drain(simulation.commands());
+            long startedAt = System.nanoTime();
             ShipState next = engine.tick(simulation.state(), commands, tickDuration);
+            long elapsedNanos = System.nanoTime() - startedAt;
+            simulation.recordTickDuration(elapsedNanos);
             simulation.state(next);
             stateListener.onStateAdvanced(next);
             return next;
@@ -89,6 +92,22 @@ public final class SimulationRuntime implements ShipStateProvider, ShipCommandGa
 
     public Duration tickDuration() {
         return tickDuration;
+    }
+
+    public Optional<SimulationDiagnostics> findDiagnostics(UUID sessionId) {
+        Objects.requireNonNull(sessionId, "sessionId must not be null");
+        ActiveSimulation simulation = simulations.get(sessionId);
+        if (simulation == null) {
+            return Optional.empty();
+        }
+        double tickRateHz = 1_000_000_000.0 / tickDuration.toNanos();
+        return Optional.of(new SimulationDiagnostics(
+            simulation.state(),
+            simulation.commands().size(),
+            tickRateHz,
+            simulation.lastTickNanos() / 1_000_000.0,
+            simulation.averageTickNanos() / 1_000_000.0
+        ));
     }
 
     private ActiveSimulation active(UUID sessionId) {
@@ -120,6 +139,8 @@ public final class SimulationRuntime implements ShipStateProvider, ShipCommandGa
     private static final class ActiveSimulation {
         private volatile ShipState state;
         private final ConcurrentLinkedQueue<ShipCommand> commands = new ConcurrentLinkedQueue<>();
+        private volatile long lastTickNanos;
+        private volatile double averageTickNanos;
 
         private ActiveSimulation(ShipState state) {
             this.state = state;
@@ -135,6 +156,21 @@ public final class SimulationRuntime implements ShipStateProvider, ShipCommandGa
 
         private ConcurrentLinkedQueue<ShipCommand> commands() {
             return commands;
+        }
+
+        private void recordTickDuration(long elapsedNanos) {
+            lastTickNanos = elapsedNanos;
+            averageTickNanos = averageTickNanos == 0.0
+                ? elapsedNanos
+                : (averageTickNanos * 0.9) + (elapsedNanos * 0.1);
+        }
+
+        private long lastTickNanos() {
+            return lastTickNanos;
+        }
+
+        private double averageTickNanos() {
+            return averageTickNanos;
         }
     }
 }
