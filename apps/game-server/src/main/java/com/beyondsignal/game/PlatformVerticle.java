@@ -75,7 +75,7 @@ public final class PlatformVerticle extends AbstractVerticle {
         new GameSessionRoutes(gameSessionService).mount(router);
 
         SessionWebSocketGateway webSocketGateway =
-            new SessionWebSocketGateway(gameSessionService, eventHub, simulationRuntime);
+            new SessionWebSocketGateway(gameSessionService, eventHub, simulationRuntime, simulationRuntime);
 
         httpServer = vertx.createHttpServer()
             .requestHandler(router)

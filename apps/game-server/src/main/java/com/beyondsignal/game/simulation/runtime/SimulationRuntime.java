@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public final class SimulationRuntime implements ShipStateProvider {
+public final class SimulationRuntime implements ShipStateProvider, ShipCommandGateway {
     private final ShipSimulationEngine engine;
     private final Duration tickDuration;
     private final SimulationStateListener stateListener;
@@ -53,6 +53,7 @@ public final class SimulationRuntime implements ShipStateProvider {
             .orElseThrow(() -> new SimulationSessionNotFoundException(sessionId));
     }
 
+    @Override
     public void submit(UUID sessionId, ShipCommand command) {
         Objects.requireNonNull(command, "command must not be null");
         active(sessionId).commands().add(command);

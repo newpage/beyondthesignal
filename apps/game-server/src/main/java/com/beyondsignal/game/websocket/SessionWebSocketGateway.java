@@ -2,6 +2,7 @@ package com.beyondsignal.game.websocket;
 
 import com.beyondsignal.game.domain.GameSession;
 import com.beyondsignal.game.service.GameSessionService;
+import com.beyondsignal.game.simulation.runtime.ShipCommandGateway;
 import com.beyondsignal.game.simulation.runtime.ShipStateProvider;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ServerWebSocket;
@@ -21,29 +22,38 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
     private final SessionEventHub eventHub;
     private final ShipStateProvider stateProvider;
     private final ReplicationMessageSerializer serializer;
+    private final HelmCommandHandler helmCommandHandler;
 
     public SessionWebSocketGateway(GameSessionService service, SessionEventHub eventHub) {
-        this(service, eventHub, ignored -> Optional.empty());
+        this(service, eventHub, ignored -> Optional.empty(), (sessionId, command) -> {
+            throw new IllegalStateException("Ship command gateway is not configured");
+        });
     }
 
     public SessionWebSocketGateway(
         GameSessionService service,
         SessionEventHub eventHub,
-        ShipStateProvider stateProvider
+        ShipStateProvider stateProvider,
+        ShipCommandGateway commandGateway
     ) {
-        this(service, eventHub, stateProvider, new ReplicationMessageSerializer());
+        this(service, eventHub, stateProvider, commandGateway, new ReplicationMessageSerializer());
     }
 
     SessionWebSocketGateway(
         GameSessionService service,
         SessionEventHub eventHub,
         ShipStateProvider stateProvider,
+        ShipCommandGateway commandGateway,
         ReplicationMessageSerializer serializer
     ) {
         this.service = Objects.requireNonNull(service, "service must not be null");
         this.eventHub = Objects.requireNonNull(eventHub, "eventHub must not be null");
         this.stateProvider = Objects.requireNonNull(stateProvider, "stateProvider must not be null");
         this.serializer = Objects.requireNonNull(serializer, "serializer must not be null");
+        this.helmCommandHandler = new HelmCommandHandler(
+            service,
+            Objects.requireNonNull(commandGateway, "commandGateway must not be null")
+        );
     }
 
     @Override
@@ -77,17 +87,19 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
         ));
         stateProvider.findState(sessionId).ifPresent(connection::sendSnapshot);
 
-        socket.textMessageHandler(message -> handleClientMessage(socket, message));
+        socket.textMessageHandler(message -> handleClientMessage(socket, sessionId, message));
         socket.closeHandler(ignored -> closeQuietly(subscription));
         socket.exceptionHandler(ignored -> closeQuietly(subscription));
     }
 
-    private static void handleClientMessage(ServerWebSocket socket, String message) {
+    private void handleClientMessage(ServerWebSocket socket, UUID sessionId, String message) {
         try {
             JsonObject request = new JsonObject(message);
             if ("PING".equalsIgnoreCase(request.getString("type"))) {
                 send(socket, "PONG", Map.of());
+                return;
             }
+            helmCommandHandler.handle(sessionId, request, response -> socket.writeTextMessage(response.encode()));
         } catch (RuntimeException ignored) {
             send(socket, "ERROR", Map.of("message", "Invalid WebSocket message"));
         }
