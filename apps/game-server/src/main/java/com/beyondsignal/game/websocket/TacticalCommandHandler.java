@@ -46,8 +46,8 @@ public final class TacticalCommandHandler {
             if (command instanceof SelectTargetCommand selectTarget) {
                 validateTarget(sessionId, selectTarget.targetId());
             }
-            if (command instanceof FireWeaponCommand) {
-                validateFireState(sessionId);
+            if (command instanceof FireWeaponCommand fireWeapon) {
+                validateFireState(sessionId, fireWeapon);
             }
             commandGateway.submit(sessionId, command);
             response.accept(result("COMMAND_ACCEPTED", requestId)
@@ -85,7 +85,7 @@ public final class TacticalCommandHandler {
         }
     }
 
-    private void validateFireState(UUID sessionId) {
+    private void validateFireState(UUID sessionId, FireWeaponCommand fireWeapon) {
         var state = stateProvider.findState(sessionId)
             .orElseThrow(() -> new CommandAuthorizationException("Simulation is not running"));
         if (state.selectedTargetId() == null) {
@@ -99,6 +99,12 @@ public final class TacticalCommandHandler {
             throw new CommandAuthorizationException(
                 "Weapons are cooling down for " + state.weaponCooldownTicks() + " more ticks"
             );
+        }
+        if (state.destroyed()) {
+            throw new CommandAuthorizationException("Ship has been destroyed");
+        }
+        if ("TORPEDO".equals(fireWeapon.weapon()) && state.torpedoesRemaining() == 0) {
+            throw new CommandAuthorizationException("No torpedoes remain");
         }
     }
 

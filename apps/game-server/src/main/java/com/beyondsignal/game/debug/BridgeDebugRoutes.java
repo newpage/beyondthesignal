@@ -27,9 +27,13 @@ public final class BridgeDebugRoutes {
     }
 
     public void mount(Router router) {
-        router.get("/bridge").handler(ctx -> ctx.response()
-            .putHeader("Content-Type", "text/html; charset=utf-8")
-            .end(BRIDGE_PAGE));
+        router.get("/bridge").handler(ctx -> bridgePage(ctx, "ALL"));
+        router.get("/bridge/captain").handler(ctx -> bridgePage(ctx, "CAPTAIN"));
+        router.get("/bridge/helm").handler(ctx -> bridgePage(ctx, "HELM"));
+        router.get("/bridge/tactical").handler(ctx -> bridgePage(ctx, "TACTICAL"));
+        router.get("/bridge/engineering").handler(ctx -> bridgePage(ctx, "ENGINEERING"));
+        router.get("/bridge/science").handler(ctx -> bridgePage(ctx, "SCIENCE"));
+        router.get("/bridge/communications").handler(ctx -> bridgePage(ctx, "COMMUNICATIONS"));
 
         router.get("/debug/bridge").handler(ctx -> ctx.response()
             .putHeader("Content-Type", "text/html; charset=utf-8")
@@ -76,15 +80,20 @@ public final class BridgeDebugRoutes {
     }
 
 
+    private static void bridgePage(io.vertx.ext.web.RoutingContext ctx, String station) {
+        ctx.response().putHeader("Content-Type", "text/html; charset=utf-8")
+            .end(BRIDGE_PAGE.replace("__STATION__", station));
+    }
+
     private static final String BRIDGE_PAGE = """
         <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-        <title>Beyond the Signal Bridge</title><style>body{margin:0;background:#050b12;color:#d9f3ff;font:14px system-ui}header,main{max-width:1200px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.p{background:#0c1b28;border:1px solid #23445a;border-radius:10px;padding:16px}input,select,button{width:100%;padding:10px;margin:5px 0;background:#102636;color:#fff;border:1px solid #31566d;border-radius:6px}button{cursor:pointer}pre{white-space:pre-wrap;color:#86e1ff}.alert{color:#ff6b6b}@media(max-width:800px){.grid{grid-template-columns:1fr}}</style></head>
-        <body><header><h1>Beyond the Signal — Bridge</h1><input id="session" placeholder="Session UUID"><input id="player" placeholder="Player UUID"><button onclick="connect()">Connect</button><span id="status"></span></header>
+        <title>Beyond the Signal Bridge — __STATION__</title><style>body{margin:0;background:#050b12;color:#d9f3ff;font:14px system-ui}header,main{max-width:1200px;margin:auto;padding:18px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.p{background:#0c1b28;border:1px solid #23445a;border-radius:10px;padding:16px}input,select,button{width:100%;padding:10px;margin:5px 0;background:#102636;color:#fff;border:1px solid #31566d;border-radius:6px}button{cursor:pointer}pre{white-space:pre-wrap;color:#86e1ff}.alert{color:#ff6b6b}@media(max-width:800px){.grid{grid-template-columns:1fr}}</style></head>
+        <body data-station="__STATION__"><header><h1>Beyond the Signal — __STATION__ Station</h1><input id="session" placeholder="Session UUID"><input id="player" placeholder="Player UUID"><button onclick="connect()">Connect</button><span id="status"></span></header>
         <main class="grid"><section class="p"><h2>Helm</h2><input id="throttle" type="number" min="0" max="100" value="50"><button onclick="send('SET_THROTTLE',{throttle:+throttle.value})">Set Throttle</button><input id="heading" type="number" min="0" max="359" value="90"><button onclick="send('SET_HEADING',{headingDegrees:+heading.value})">Set Heading</button></section>
-        <section class="p"><h2>Tactical</h2><button onclick="send('SET_SHIELDS',{raised:true})">Raise Shields</button><button onclick="send('SET_SHIELDS',{raised:false})">Lower Shields</button><input id="target" placeholder="Target UUID"><button onclick="send('SELECT_TARGET',{targetId:target.value})">Select Target</button><button onclick="send('FIRE_WEAPON',{weapon:'PHASER'})">Fire Phaser</button></section>
+        <section class="p"><h2>Tactical</h2><button onclick="send('SET_SHIELDS',{raised:true})">Raise Shields</button><button onclick="send('SET_SHIELDS',{raised:false})">Lower Shields</button><input id="target" placeholder="Target UUID"><button onclick="send('SELECT_TARGET',{targetId:target.value})">Select Target</button><button onclick="send('FIRE_WEAPON',{weapon:'PHASER'})">Fire Phaser</button><button onclick="send('FIRE_WEAPON',{weapon:'TORPEDO'})">Fire Torpedo</button></section>
         <section class="p"><h2>Engineering</h2><select id="system"><option>ENGINES</option><option>SHIELDS</option><option>SENSORS</option><option>WEAPONS</option><option>LIFE_SUPPORT</option></select><input id="power" type="number" min="0" max="100" value="20"><button onclick="send('ALLOCATE_POWER',{subsystem:system.value,powerAllocation:+power.value})">Allocate Power</button></section>
         <section class="p"><h2>Science</h2><button onclick="send('SCAN_CONTACTS',{})">Scan Contacts</button></section><section class="p"><h2>Captain</h2><button onclick="send('SET_RED_ALERT',{enabled:true})">Red Alert</button><button onclick="send('SET_RED_ALERT',{enabled:false})">Stand Down</button></section><section class="p"><h2>Authoritative State</h2><pre id="state">Not connected</pre></section></main>
-        <script>let ws;const $=id=>document.getElementById(id);function connect(){ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/session/${$('session').value}`);ws.onopen=()=>$('status').textContent=' CONNECTED';ws.onclose=()=>$('status').textContent=' DISCONNECTED';ws.onmessage=e=>{const m=JSON.parse(e.data);$('state').textContent=JSON.stringify(m,null,2);if(m.combatContacts?.length&&!$('target').value)$('target').value=m.combatContacts[0].id}}function send(type,data){if(!ws||ws.readyState!==1)return alert('Connect first');ws.send(JSON.stringify({protocolVersion:1,type,requestId:crypto.randomUUID(),playerId:$('player').value,...data}))}</script></body></html>
+        <script>document.querySelectorAll('section').forEach(s=>{const station=document.body.dataset.station;if(station!=='ALL'&&!s.querySelector('h2')?.textContent.toUpperCase().includes(station)&&!s.querySelector('h2')?.textContent.includes('Authoritative'))s.style.display='none'});let ws;const $=id=>document.getElementById(id);function connect(){ws=new WebSocket(`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/session/${$('session').value}`);ws.onopen=()=>$('status').textContent=' CONNECTED';ws.onclose=()=>$('status').textContent=' DISCONNECTED';ws.onmessage=e=>{const m=JSON.parse(e.data);$('state').textContent=JSON.stringify(m,null,2);if(m.combatContacts?.length&&!$('target').value)$('target').value=m.combatContacts[0].id}}function send(type,data){if(!ws||ws.readyState!==1)return alert('Connect first');ws.send(JSON.stringify({protocolVersion:1,type,requestId:crypto.randomUUID(),playerId:$('player').value,...data}))}</script></body></html>
         """;
 
     private static final String PAGE = """

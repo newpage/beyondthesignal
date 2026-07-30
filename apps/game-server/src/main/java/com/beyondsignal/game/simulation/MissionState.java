@@ -30,6 +30,12 @@ public record MissionState(
             score + awardedScore, startedAtTick, tick);
     }
 
+    public MissionState fail(long tick) {
+        if (status != MissionStatus.ACTIVE) return this;
+        return new MissionState(id, title, objective, MissionStatus.FAILED,
+            score, startedAtTick, tick);
+    }
+
     private static String requireText(String value, String name) {
         Objects.requireNonNull(value, name + " must not be null");
         String result = value.trim();

@@ -47,6 +47,12 @@ public final class SimulationStateEventPublisher implements SimulationStateListe
         payload.put("redAlert", state.redAlert());
         payload.put("sensorCooldownTicks", state.sensorCooldownTicks());
         payload.put("scansCompleted", state.scansCompleted());
+        payload.put("shieldStrength", state.shieldStrength());
+        payload.put("hullIntegrity", state.hullIntegrity());
+        payload.put("enemyWeaponCooldownTicks", state.enemyWeaponCooldownTicks());
+        payload.put("torpedoesRemaining", state.torpedoesRemaining());
+        payload.put("enemyShotsFired", state.enemyShotsFired());
+        payload.put("destroyed", state.destroyed());
         payload.put("subsystems", state.subsystems().entrySet().stream().collect(java.util.stream.Collectors.toMap(
             entry -> entry.getKey().name(),
             entry -> Map.of("health", entry.getValue().health(), "powerAllocation", entry.getValue().powerAllocation())

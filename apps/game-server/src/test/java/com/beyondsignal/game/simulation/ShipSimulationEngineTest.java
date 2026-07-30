@@ -236,6 +236,39 @@ class ShipSimulationEngineTest {
     }
 
     @Test
+    void torpedoConsumesAmmunitionAndInflictsHeavyDamage() {
+        ShipState state = ShipState.initial(UUID.randomUUID());
+        UUID targetId = state.combatContacts().keySet().iterator().next();
+
+        state = engine.tick(state, List.of(
+            new SelectTargetCommand(targetId),
+            new FireWeaponCommand("TORPEDO")
+        ), Duration.ofMillis(50));
+
+        assertThat(state.torpedoesRemaining()).isEqualTo(5);
+        assertThat(state.shotsFired()).isEqualTo(1);
+        assertThat(state.weaponCooldownTicks()).isEqualTo(ShipSimulationEngine.TORPEDO_COOLDOWN_TICKS);
+        assertThat(state.combatContacts().get(targetId).shieldStrength()).isZero();
+        assertThat(state.combatContacts().get(targetId).hullIntegrity()).isEqualTo(80);
+    }
+
+    @Test
+    void hostileReturnsFireDuringRedAlert() {
+        ShipState state = ShipState.initial(UUID.randomUUID());
+        state = engine.tick(state, List.of(new SetRedAlertCommand(true), new SetShieldsCommand(true)), Duration.ofMillis(50));
+
+        for (int i = 0; i <= ShipSimulationEngine.ENEMY_WEAPON_COOLDOWN_TICKS && state.enemyShotsFired() == 0; i++) {
+            state = engine.tick(state, List.of(), Duration.ofMillis(50));
+        }
+
+        assertThat(state.enemyShotsFired()).isEqualTo(1);
+        assertThat(state.enemyWeaponCooldownTicks()).isEqualTo(ShipSimulationEngine.ENEMY_WEAPON_COOLDOWN_TICKS);
+        assertThat(state.shieldStrength()).isEqualTo(82);
+        assertThat(state.hullIntegrity()).isEqualTo(100);
+        assertThat(state.crewAdvisory().message()).contains("Enemy weapons impact");
+    }
+
+    @Test
     void scienceScanGeneratesCrewAdvisory() {
         ShipState next = engine.tick(
             ShipState.initial(UUID.randomUUID()),

@@ -26,7 +26,13 @@ public record ShipState(
     Map<ShipSubsystem, SubsystemState> subsystems,
     Map<UUID, WorldObjectState> worldObjects,
     MissionState mission,
-    CrewAdvisory crewAdvisory
+    CrewAdvisory crewAdvisory,
+    int shieldStrength,
+    int hullIntegrity,
+    int enemyWeaponCooldownTicks,
+    int torpedoesRemaining,
+    long enemyShotsFired,
+    boolean destroyed
 ) {
     public ShipState {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
@@ -53,6 +59,24 @@ public record ShipState(
         }
         if (scansCompleted < 0) {
             throw new IllegalArgumentException("scansCompleted must not be negative");
+        }
+        if (shieldStrength < 0 || shieldStrength > 100) {
+            throw new IllegalArgumentException("shieldStrength must be between 0 and 100");
+        }
+        if (hullIntegrity < 0 || hullIntegrity > 100) {
+            throw new IllegalArgumentException("hullIntegrity must be between 0 and 100");
+        }
+        if (enemyWeaponCooldownTicks < 0) {
+            throw new IllegalArgumentException("enemyWeaponCooldownTicks must not be negative");
+        }
+        if (torpedoesRemaining < 0) {
+            throw new IllegalArgumentException("torpedoesRemaining must not be negative");
+        }
+        if (enemyShotsFired < 0) {
+            throw new IllegalArgumentException("enemyShotsFired must not be negative");
+        }
+        if (destroyed != (hullIntegrity == 0)) {
+            throw new IllegalArgumentException("destroyed must match zero hull integrity");
         }
 
         Map<UUID, CombatContactState> contactCopy = Map.copyOf(
@@ -124,7 +148,8 @@ public record ShipState(
 
         return new ShipState(
             sessionId, 0, Vector3.ZERO, Vector3.ZERO, 0.0, 0, false, null,
-            0, 0, contacts, null, false, 0, 0, systems, world, mission, advisory
+            0, 0, contacts, null, false, 0, 0, systems, world, mission, advisory,
+            100, 100, 30, 6, 0, false
         );
     }
 }
