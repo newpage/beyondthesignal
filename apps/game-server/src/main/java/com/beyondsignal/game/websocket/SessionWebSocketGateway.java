@@ -54,7 +54,7 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
         ShipCommandGateway requiredGateway =
             Objects.requireNonNull(commandGateway, "commandGateway must not be null");
         this.helmCommandHandler = new HelmCommandHandler(service, requiredGateway);
-        this.tacticalCommandHandler = new TacticalCommandHandler(service, requiredGateway);
+        this.tacticalCommandHandler = new TacticalCommandHandler(service, requiredGateway, stateProvider);
     }
 
     @Override
@@ -106,7 +106,7 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
             switch (type) {
                 case "SET_THROTTLE", "SET_HEADING" ->
                     helmCommandHandler.handle(sessionId, request, response);
-                case "SET_SHIELDS", "SELECT_TARGET", "CLEAR_TARGET" ->
+                case "SET_SHIELDS", "SELECT_TARGET", "CLEAR_TARGET", "FIRE_WEAPON" ->
                     tacticalCommandHandler.handle(sessionId, request, response);
                 default -> socket.writeTextMessage(new JsonObject()
                     .put("protocolVersion", ReplicationMessageSerializer.PROTOCOL_VERSION)

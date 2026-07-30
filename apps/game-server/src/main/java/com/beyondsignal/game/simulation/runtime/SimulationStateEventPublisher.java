@@ -40,6 +40,8 @@ public final class SimulationStateEventPublisher implements SimulationStateListe
         payload.put("headingDegrees", state.headingDegrees());
         payload.put("throttle", state.throttle());
         payload.put("shieldsRaised", state.shieldsRaised());
+        payload.put("weaponCooldownTicks", state.weaponCooldownTicks());
+        payload.put("shotsFired", state.shotsFired());
         if (state.selectedTargetId() != null) {
             payload.put("selectedTargetId", state.selectedTargetId().toString());
         }

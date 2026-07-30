@@ -8,6 +8,7 @@ import java.util.Objects;
 
 public final class ShipSimulationEngine {
     private static final double MAX_SPEED_UNITS_PER_SECOND = 100.0;
+    public static final int PHASER_COOLDOWN_TICKS = 10;
 
     public ShipState tick(ShipState current, List<? extends ShipCommand> commands, Duration elapsed) {
         Objects.requireNonNull(current, "current must not be null");
@@ -22,6 +23,8 @@ public final class ShipSimulationEngine {
         int throttle = current.throttle();
         boolean shieldsRaised = current.shieldsRaised();
         java.util.UUID selectedTargetId = current.selectedTargetId();
+        int weaponCooldownTicks = Math.max(0, current.weaponCooldownTicks() - 1);
+        long shotsFired = current.shotsFired();
         EnumMap<ShipSubsystem, SubsystemState> subsystems =
             new EnumMap<>(current.subsystems());
 
@@ -33,6 +36,12 @@ public final class ShipSimulationEngine {
                 case SetShieldsCommand setShields -> shieldsRaised = setShields.raised();
                 case SelectTargetCommand selectTarget -> selectedTargetId = selectTarget.targetId();
                 case ClearTargetCommand ignored -> selectedTargetId = null;
+                case FireWeaponCommand ignored -> {
+                    if (selectedTargetId != null && weaponCooldownTicks == 0) {
+                        shotsFired++;
+                        weaponCooldownTicks = PHASER_COOLDOWN_TICKS;
+                    }
+                }
                 case AllocatePowerCommand allocatePower -> {
                     SubsystemState existing = subsystems.get(allocatePower.subsystem());
                     subsystems.put(
@@ -71,6 +80,8 @@ public final class ShipSimulationEngine {
             throttle,
             shieldsRaised,
             selectedTargetId,
+            weaponCooldownTicks,
+            shotsFired,
             subsystems
         );
     }

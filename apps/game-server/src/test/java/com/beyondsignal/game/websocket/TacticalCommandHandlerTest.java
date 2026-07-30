@@ -10,6 +10,8 @@ import com.beyondsignal.game.service.command.CreateSessionCommand;
 import com.beyondsignal.game.service.command.JoinSessionCommand;
 import com.beyondsignal.game.service.command.StartSessionCommand;
 import com.beyondsignal.game.simulation.ClearTargetCommand;
+import com.beyondsignal.game.simulation.FireWeaponCommand;
+import com.beyondsignal.game.simulation.ShipState;
 import com.beyondsignal.game.simulation.SelectTargetCommand;
 import com.beyondsignal.game.simulation.SetShieldsCommand;
 import com.beyondsignal.game.simulation.ShipCommand;
@@ -43,7 +45,6 @@ class TacticalCommandHandlerTest {
             Clock.fixed(Instant.parse("2026-07-30T12:00:00Z"), ZoneOffset.UTC)
         );
         commandGateway = new RecordingGateway();
-        handler = new TacticalCommandHandler(sessionService, commandGateway);
 
         session = sessionService.createSession(new CreateSessionCommand("Alpha", "Horizon", "Host"));
         tacticalPlayer = sessionService.joinSession(new JoinSessionCommand(session.id(), "Tactical"));
@@ -52,6 +53,11 @@ class TacticalCommandHandlerTest {
         ));
         sessionService.markReady(session.id(), session.hostPlayerId());
         sessionService.startSession(new StartSessionCommand(session.id(), session.hostPlayerId()));
+        handler = new TacticalCommandHandler(
+            sessionService,
+            commandGateway,
+            ignored -> Optional.of(ShipState.initial(session.id()))
+        );
     }
 
     @Test
@@ -88,6 +94,42 @@ class TacticalCommandHandlerTest {
         );
         assertThat(responses).allSatisfy(response ->
             assertThat(response.getString("type")).isEqualTo("COMMAND_ACCEPTED"));
+    }
+
+
+    @Test
+    void acceptsFireWeaponWhenTargetSelectedAndWeaponsReady() {
+        UUID targetId = UUID.randomUUID();
+        ShipState targeted = new com.beyondsignal.game.simulation.ShipSimulationEngine().tick(
+            ShipState.initial(session.id()),
+            List.of(new SelectTargetCommand(targetId)),
+            java.time.Duration.ofMillis(50)
+        );
+        handler = new TacticalCommandHandler(sessionService, commandGateway, ignored -> Optional.of(targeted));
+        List<JsonObject> responses = new ArrayList<>();
+
+        handler.handle(session.id(), new JsonObject()
+            .put("type", "FIRE_WEAPON")
+            .put("requestId", "tactical-fire-1")
+            .put("playerId", tacticalPlayer.id().toString())
+            .put("weapon", "PHASER"), responses::add);
+
+        assertThat(commandGateway.commands).singleElement().isEqualTo(new FireWeaponCommand("PHASER"));
+        assertThat(responses.getFirst().getString("type")).isEqualTo("COMMAND_ACCEPTED");
+    }
+
+    @Test
+    void rejectsFireWeaponWithoutSelectedTarget() {
+        List<JsonObject> responses = new ArrayList<>();
+
+        handler.handle(session.id(), new JsonObject()
+            .put("type", "FIRE_WEAPON")
+            .put("playerId", tacticalPlayer.id().toString())
+            .put("weapon", "PHASER"), responses::add);
+
+        assertThat(commandGateway.commands).isEmpty();
+        assertThat(responses.getFirst().getString("type")).isEqualTo("COMMAND_REJECTED");
+        assertThat(responses.getFirst().getString("message")).contains("target");
     }
 
     @Test

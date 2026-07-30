@@ -82,6 +82,35 @@ class ShipSimulationEngineTest {
         assertThat(cleared.selectedTargetId()).isNull();
     }
 
+
+    @Test
+    void firesPhaserAndAppliesAuthoritativeCooldown() {
+        UUID targetId = UUID.randomUUID();
+        ShipState targeted = engine.tick(
+            ShipState.initial(UUID.randomUUID()),
+            List.of(new SelectTargetCommand(targetId)),
+            Duration.ofMillis(50)
+        );
+
+        ShipState fired = engine.tick(
+            targeted,
+            List.of(new FireWeaponCommand("PHASER")),
+            Duration.ofMillis(50)
+        );
+
+        assertThat(fired.shotsFired()).isEqualTo(1);
+        assertThat(fired.weaponCooldownTicks()).isEqualTo(ShipSimulationEngine.PHASER_COOLDOWN_TICKS);
+
+        ShipState duplicateDuringCooldown = engine.tick(
+            fired,
+            List.of(new FireWeaponCommand("PHASER")),
+            Duration.ofMillis(50)
+        );
+        assertThat(duplicateDuringCooldown.shotsFired()).isEqualTo(1);
+        assertThat(duplicateDuringCooldown.weaponCooldownTicks())
+            .isEqualTo(ShipSimulationEngine.PHASER_COOLDOWN_TICKS - 1);
+    }
+
     @Test
     void rejectsPowerAllocationsAboveShipBudget() {
         ShipState initial = ShipState.initial(UUID.randomUUID());

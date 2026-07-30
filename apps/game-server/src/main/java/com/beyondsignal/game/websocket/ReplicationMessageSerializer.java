@@ -27,6 +27,8 @@ public final class ReplicationMessageSerializer {
                 .put("headingDegrees", requiredNumber(payload, "headingDegrees").doubleValue())
                 .put("throttle", requiredNumber(payload, "throttle").intValue())
                 .put("shieldsRaised", requiredBoolean(payload, "shieldsRaised"))
+                .put("weaponCooldownTicks", requiredNumber(payload, "weaponCooldownTicks").intValue())
+                .put("shotsFired", requiredLong(payload, "shotsFired"))
                 .put("selectedTargetId", payload.get("selectedTargetId"));
         }
 
@@ -46,6 +48,8 @@ public final class ReplicationMessageSerializer {
             .put("headingDegrees", state.headingDegrees())
             .put("throttle", state.throttle())
             .put("shieldsRaised", state.shieldsRaised())
+            .put("weaponCooldownTicks", state.weaponCooldownTicks())
+            .put("shotsFired", state.shotsFired())
             .put("selectedTargetId", state.selectedTargetId() == null ? null : state.selectedTargetId().toString());
     }
 

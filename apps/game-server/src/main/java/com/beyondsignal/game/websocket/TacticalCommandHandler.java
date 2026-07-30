@@ -5,10 +5,12 @@ import com.beyondsignal.game.domain.GameSession;
 import com.beyondsignal.game.domain.SessionStatus;
 import com.beyondsignal.game.service.GameSessionService;
 import com.beyondsignal.game.simulation.ClearTargetCommand;
+import com.beyondsignal.game.simulation.FireWeaponCommand;
 import com.beyondsignal.game.simulation.SelectTargetCommand;
 import com.beyondsignal.game.simulation.SetShieldsCommand;
 import com.beyondsignal.game.simulation.ShipCommand;
 import com.beyondsignal.game.simulation.runtime.ShipCommandGateway;
+import com.beyondsignal.game.simulation.runtime.ShipStateProvider;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
@@ -18,10 +20,16 @@ import java.util.function.Consumer;
 public final class TacticalCommandHandler {
     private final GameSessionService sessionService;
     private final ShipCommandGateway commandGateway;
+    private final ShipStateProvider stateProvider;
 
-    public TacticalCommandHandler(GameSessionService sessionService, ShipCommandGateway commandGateway) {
+    public TacticalCommandHandler(
+        GameSessionService sessionService,
+        ShipCommandGateway commandGateway,
+        ShipStateProvider stateProvider
+    ) {
         this.sessionService = Objects.requireNonNull(sessionService, "sessionService must not be null");
         this.commandGateway = Objects.requireNonNull(commandGateway, "commandGateway must not be null");
+        this.stateProvider = Objects.requireNonNull(stateProvider, "stateProvider must not be null");
     }
 
     public void handle(UUID sessionId, JsonObject request, Consumer<JsonObject> response) {
@@ -35,6 +43,9 @@ public final class TacticalCommandHandler {
             GameSession session = sessionService.getSession(sessionId);
             authorizeTactical(session, playerId);
             ShipCommand command = decode(request);
+            if (command instanceof FireWeaponCommand) {
+                validateFireState(sessionId);
+            }
             commandGateway.submit(sessionId, command);
             response.accept(result("COMMAND_ACCEPTED", requestId)
                 .put("command", request.getString("type")));
@@ -53,8 +64,23 @@ public final class TacticalCommandHandler {
             case "SET_SHIELDS" -> new SetShieldsCommand(requiredBoolean(request, "raised"));
             case "SELECT_TARGET" -> new SelectTargetCommand(requiredUuid(request, "targetId"));
             case "CLEAR_TARGET" -> new ClearTargetCommand();
+            case "FIRE_WEAPON" -> new FireWeaponCommand(requiredText(request, "weapon"));
             default -> throw new IllegalArgumentException("Unsupported tactical command: " + type);
         };
+    }
+
+
+    private void validateFireState(UUID sessionId) {
+        var state = stateProvider.findState(sessionId)
+            .orElseThrow(() -> new CommandAuthorizationException("Simulation is not running"));
+        if (state.selectedTargetId() == null) {
+            throw new CommandAuthorizationException("No tactical target is selected");
+        }
+        if (state.weaponCooldownTicks() > 0) {
+            throw new CommandAuthorizationException(
+                "Weapons are cooling down for " + state.weaponCooldownTicks() + " more ticks"
+            );
+        }
     }
 
     private static void authorizeTactical(GameSession session, UUID playerId) {

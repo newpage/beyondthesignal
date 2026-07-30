@@ -15,6 +15,8 @@ public record ShipState(
     int throttle,
     boolean shieldsRaised,
     UUID selectedTargetId,
+    int weaponCooldownTicks,
+    long shotsFired,
     Map<ShipSubsystem, SubsystemState> subsystems
 ) {
     public ShipState {
@@ -30,6 +32,12 @@ public record ShipState(
         }
         if (throttle < 0 || throttle > 100) {
             throw new IllegalArgumentException("throttle must be between 0 and 100");
+        }
+        if (weaponCooldownTicks < 0) {
+            throw new IllegalArgumentException("weaponCooldownTicks must not be negative");
+        }
+        if (shotsFired < 0) {
+            throw new IllegalArgumentException("shotsFired must not be negative");
         }
 
         EnumMap<ShipSubsystem, SubsystemState> copy = new EnumMap<>(ShipSubsystem.class);
@@ -50,6 +58,6 @@ public record ShipState(
         systems.put(ShipSubsystem.WEAPONS, SubsystemState.nominal(15));
         systems.put(ShipSubsystem.LIFE_SUPPORT, SubsystemState.nominal(10));
 
-        return new ShipState(sessionId, 0, Vector3.ZERO, Vector3.ZERO, 0.0, 0, false, null, systems);
+        return new ShipState(sessionId, 0, Vector3.ZERO, Vector3.ZERO, 0.0, 0, false, null, 0, 0, systems);
     }
 }

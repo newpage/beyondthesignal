@@ -29,6 +29,8 @@ class ReplicationMessageSerializerTest {
                 "headingDegrees", 90.0,
                 "throttle", 75,
                 "shieldsRaised", true,
+                "weaponCooldownTicks", 6,
+                "shotsFired", 12L,
                 "selectedTargetId", "d4d0be92-df30-49c8-b642-f9f3c901ec46"
             )
         );
@@ -43,6 +45,8 @@ class ReplicationMessageSerializerTest {
         assertThat(json.getJsonObject("position").getDouble("x")).isEqualTo(1.0);
         assertThat(json.getInteger("throttle")).isEqualTo(75);
         assertThat(json.getBoolean("shieldsRaised")).isTrue();
+        assertThat(json.getInteger("weaponCooldownTicks")).isEqualTo(6);
+        assertThat(json.getLong("shotsFired")).isEqualTo(12L);
         assertThat(json.getString("selectedTargetId"))
             .isEqualTo("d4d0be92-df30-49c8-b642-f9f3c901ec46");
     }
@@ -57,6 +61,8 @@ class ReplicationMessageSerializerTest {
         assertThat(json.getLong("tick")).isZero();
         assertThat(json.getLong("snapshotVersion")).isZero();
         assertThat(json.getBoolean("shieldsRaised")).isFalse();
+        assertThat(json.getInteger("weaponCooldownTicks")).isZero();
+        assertThat(json.getLong("shotsFired")).isZero();
         assertThat(json.getString("selectedTargetId")).isNull();
     }
 }
