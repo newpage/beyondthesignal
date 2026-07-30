@@ -71,9 +71,9 @@ public final class SimulationRuntime {
 
     public List<ShipState> tickAll() {
         return simulations.keySet().stream()
-            .sorted()
-            .map(this::tick)
-            .toList();
+        .sorted(java.util.Comparator.comparing(UUID::toString))
+        .map(this::tick)
+        .toList();
     }
 
     public boolean stop(UUID sessionId) {
