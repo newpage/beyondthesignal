@@ -70,6 +70,38 @@ public final class GameSession {
         );
     }
 
+    public static GameSession restore(
+        UUID id,
+        String sessionName,
+        String shipName,
+        UUID hostPlayerId,
+        Instant createdAt,
+        SessionStatus status,
+        Instant startedAt,
+        List<Player> players,
+        Map<BridgeStation, StationAssignment> assignments
+    ) {
+        Objects.requireNonNull(players, "players must not be null");
+        Map<UUID, Player> playersById = new LinkedHashMap<>();
+        for (Player player : players) {
+            Player previous = playersById.put(player.id(), player);
+            if (previous != null) {
+                throw new IllegalArgumentException("Duplicate player id: " + player.id());
+            }
+        }
+        return new GameSession(
+            id,
+            sessionName,
+            shipName,
+            hostPlayerId,
+            createdAt,
+            status,
+            startedAt,
+            playersById,
+            assignments
+        );
+    }
+
     public void transitionTo(SessionStatus target, Instant occurredAt) {
         Objects.requireNonNull(target, "target must not be null");
         Objects.requireNonNull(occurredAt, "occurredAt must not be null");
