@@ -2,13 +2,14 @@ package com.beyondsignal.game.websocket;
 
 import com.beyondsignal.game.domain.GameSession;
 import com.beyondsignal.game.service.GameSessionService;
-import com.beyondsignal.game.service.event.SessionEvent;
+import com.beyondsignal.game.simulation.runtime.ShipStateProvider;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,10 +19,31 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
 
     private final GameSessionService service;
     private final SessionEventHub eventHub;
+    private final ShipStateProvider stateProvider;
+    private final ReplicationMessageSerializer serializer;
 
     public SessionWebSocketGateway(GameSessionService service, SessionEventHub eventHub) {
+        this(service, eventHub, ignored -> Optional.empty());
+    }
+
+    public SessionWebSocketGateway(
+        GameSessionService service,
+        SessionEventHub eventHub,
+        ShipStateProvider stateProvider
+    ) {
+        this(service, eventHub, stateProvider, new ReplicationMessageSerializer());
+    }
+
+    SessionWebSocketGateway(
+        GameSessionService service,
+        SessionEventHub eventHub,
+        ShipStateProvider stateProvider,
+        ReplicationMessageSerializer serializer
+    ) {
         this.service = Objects.requireNonNull(service, "service must not be null");
         this.eventHub = Objects.requireNonNull(eventHub, "eventHub must not be null");
+        this.stateProvider = Objects.requireNonNull(stateProvider, "stateProvider must not be null");
+        this.serializer = Objects.requireNonNull(serializer, "serializer must not be null");
     }
 
     @Override
@@ -40,6 +62,12 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
             return;
         }
 
+        ReplicationConnection connection =
+            new ReplicationConnection(socket::writeTextMessage, serializer);
+
+        // Subscribe before snapshots so no simulation tick is lost during connection setup.
+        final AutoCloseable subscription = eventHub.subscribe(sessionId, connection);
+
         send(socket, "SESSION_SNAPSHOT", Map.of(
             "sessionId", session.id().toString(),
             "sessionName", session.sessionName(),
@@ -47,8 +75,8 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
             "status", session.status().name(),
             "hostPlayerId", session.hostPlayerId().toString()
         ));
+        stateProvider.findState(sessionId).ifPresent(connection::sendSnapshot);
 
-        final AutoCloseable subscription = eventHub.subscribe(sessionId, event -> send(socket, event));
         socket.textMessageHandler(message -> handleClientMessage(socket, message));
         socket.closeHandler(ignored -> closeQuietly(subscription));
         socket.exceptionHandler(ignored -> closeQuietly(subscription));
@@ -77,17 +105,9 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
         }
     }
 
-    private static void send(ServerWebSocket socket, SessionEvent event) {
-        JsonObject message = new JsonObject()
-            .put("type", event.type().name())
-            .put("sessionId", event.sessionId().toString())
-            .put("occurredAt", event.occurredAt().toString())
-            .put("payload", new JsonObject(event.payload()));
-        socket.writeTextMessage(message.encode());
-    }
-
     private static void send(ServerWebSocket socket, String type, Map<String, Object> payload) {
         socket.writeTextMessage(new JsonObject()
+            .put("protocolVersion", ReplicationMessageSerializer.PROTOCOL_VERSION)
             .put("type", type)
             .put("payload", new JsonObject(payload))
             .encode());

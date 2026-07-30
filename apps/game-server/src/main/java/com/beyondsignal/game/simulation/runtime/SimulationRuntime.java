@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public final class SimulationRuntime {
+public final class SimulationRuntime implements ShipStateProvider {
     private final ShipSimulationEngine engine;
     private final Duration tickDuration;
     private final SimulationStateListener stateListener;
@@ -41,6 +41,7 @@ public final class SimulationRuntime {
         return (existing == null ? created : existing).state();
     }
 
+    @Override
     public Optional<ShipState> findState(UUID sessionId) {
         Objects.requireNonNull(sessionId, "sessionId must not be null");
         ActiveSimulation simulation = simulations.get(sessionId);
