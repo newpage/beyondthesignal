@@ -23,6 +23,7 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
     private final ShipStateProvider stateProvider;
     private final ReplicationMessageSerializer serializer;
     private final HelmCommandHandler helmCommandHandler;
+    private final TacticalCommandHandler tacticalCommandHandler;
 
     public SessionWebSocketGateway(GameSessionService service, SessionEventHub eventHub) {
         this(service, eventHub, ignored -> Optional.empty(), (sessionId, command) -> {
@@ -50,10 +51,10 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
         this.eventHub = Objects.requireNonNull(eventHub, "eventHub must not be null");
         this.stateProvider = Objects.requireNonNull(stateProvider, "stateProvider must not be null");
         this.serializer = Objects.requireNonNull(serializer, "serializer must not be null");
-        this.helmCommandHandler = new HelmCommandHandler(
-            service,
-            Objects.requireNonNull(commandGateway, "commandGateway must not be null")
-        );
+        ShipCommandGateway requiredGateway =
+            Objects.requireNonNull(commandGateway, "commandGateway must not be null");
+        this.helmCommandHandler = new HelmCommandHandler(service, requiredGateway);
+        this.tacticalCommandHandler = new TacticalCommandHandler(service, requiredGateway);
     }
 
     @Override
@@ -99,7 +100,21 @@ public final class SessionWebSocketGateway implements Handler<ServerWebSocket> {
                 send(socket, "PONG", Map.of());
                 return;
             }
-            helmCommandHandler.handle(sessionId, request, response -> socket.writeTextMessage(response.encode()));
+            String type = request.getString("type", "");
+            var response = (java.util.function.Consumer<JsonObject>)
+                result -> socket.writeTextMessage(result.encode());
+            switch (type) {
+                case "SET_THROTTLE", "SET_HEADING" ->
+                    helmCommandHandler.handle(sessionId, request, response);
+                case "SET_SHIELDS", "SELECT_TARGET", "CLEAR_TARGET" ->
+                    tacticalCommandHandler.handle(sessionId, request, response);
+                default -> socket.writeTextMessage(new JsonObject()
+                    .put("protocolVersion", ReplicationMessageSerializer.PROTOCOL_VERSION)
+                    .put("type", "INVALID_COMMAND")
+                    .put("requestId", request.getString("requestId"))
+                    .put("message", "Unsupported bridge command: " + type)
+                    .encode());
+            }
         } catch (RuntimeException ignored) {
             send(socket, "ERROR", Map.of("message", "Invalid WebSocket message"));
         }

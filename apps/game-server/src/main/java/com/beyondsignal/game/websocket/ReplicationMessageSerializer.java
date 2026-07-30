@@ -25,7 +25,9 @@ public final class ReplicationMessageSerializer {
                 .put("position", new JsonObject(requiredMap(payload, "position")))
                 .put("velocity", new JsonObject(requiredMap(payload, "velocity")))
                 .put("headingDegrees", requiredNumber(payload, "headingDegrees").doubleValue())
-                .put("throttle", requiredNumber(payload, "throttle").intValue());
+                .put("throttle", requiredNumber(payload, "throttle").intValue())
+                .put("shieldsRaised", requiredBoolean(payload, "shieldsRaised"))
+                .put("selectedTargetId", payload.get("selectedTargetId"));
         }
 
         return envelope(event.type().name(), event.sessionId().toString())
@@ -42,7 +44,9 @@ public final class ReplicationMessageSerializer {
             .put("position", vector(state.position().x(), state.position().y(), state.position().z()))
             .put("velocity", vector(state.velocity().x(), state.velocity().y(), state.velocity().z()))
             .put("headingDegrees", state.headingDegrees())
-            .put("throttle", state.throttle());
+            .put("throttle", state.throttle())
+            .put("shieldsRaised", state.shieldsRaised())
+            .put("selectedTargetId", state.selectedTargetId() == null ? null : state.selectedTargetId().toString());
     }
 
     private static JsonObject envelope(String type, String sessionId) {
@@ -58,6 +62,14 @@ public final class ReplicationMessageSerializer {
 
     private static long requiredLong(Map<String, Object> payload, String name) {
         return requiredNumber(payload, name).longValue();
+    }
+
+    private static boolean requiredBoolean(Map<String, Object> payload, String name) {
+        Object value = payload.get(name);
+        if (!(value instanceof Boolean result)) {
+            throw new IllegalArgumentException("Missing or invalid replication field: " + name);
+        }
+        return result;
     }
 
     private static Number requiredNumber(Map<String, Object> payload, String name) {

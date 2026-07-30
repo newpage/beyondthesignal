@@ -73,6 +73,8 @@ public final class BridgeDebugSnapshotFactory {
                     Math.pow(state.velocity().z(), 2)))
                 .put("headingDegrees", state.headingDegrees())
                 .put("throttle", state.throttle())
+                .put("shieldsRaised", state.shieldsRaised())
+                .put("selectedTargetId", state.selectedTargetId() == null ? null : state.selectedTargetId().toString())
                 .put("subsystems", subsystems))
             .put("runtime", new JsonObject()
                 .put("configuredTickRateHz", diagnostics.configuredTickRateHz())

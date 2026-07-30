@@ -20,6 +20,8 @@ public final class ShipSimulationEngine {
 
         double heading = current.headingDegrees();
         int throttle = current.throttle();
+        boolean shieldsRaised = current.shieldsRaised();
+        java.util.UUID selectedTargetId = current.selectedTargetId();
         EnumMap<ShipSubsystem, SubsystemState> subsystems =
             new EnumMap<>(current.subsystems());
 
@@ -28,6 +30,9 @@ public final class ShipSimulationEngine {
             switch (command) {
                 case SetHeadingCommand setHeading -> heading = setHeading.normalizedHeading();
                 case SetThrottleCommand setThrottle -> throttle = setThrottle.throttle();
+                case SetShieldsCommand setShields -> shieldsRaised = setShields.raised();
+                case SelectTargetCommand selectTarget -> selectedTargetId = selectTarget.targetId();
+                case ClearTargetCommand ignored -> selectedTargetId = null;
                 case AllocatePowerCommand allocatePower -> {
                     SubsystemState existing = subsystems.get(allocatePower.subsystem());
                     subsystems.put(
@@ -64,6 +69,8 @@ public final class ShipSimulationEngine {
             velocity,
             heading,
             throttle,
+            shieldsRaised,
+            selectedTargetId,
             subsystems
         );
     }

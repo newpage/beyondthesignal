@@ -60,6 +60,29 @@ class ShipSimulationEngineTest {
     }
 
     @Test
+    void appliesTacticalShieldAndTargetCommandsAuthoritatively() {
+        UUID targetId = UUID.randomUUID();
+
+        ShipState selected = engine.tick(
+            ShipState.initial(UUID.randomUUID()),
+            List.of(new SetShieldsCommand(true), new SelectTargetCommand(targetId)),
+            Duration.ofMillis(50)
+        );
+
+        assertThat(selected.shieldsRaised()).isTrue();
+        assertThat(selected.selectedTargetId()).isEqualTo(targetId);
+
+        ShipState cleared = engine.tick(
+            selected,
+            List.of(new SetShieldsCommand(false), new ClearTargetCommand()),
+            Duration.ofMillis(50)
+        );
+
+        assertThat(cleared.shieldsRaised()).isFalse();
+        assertThat(cleared.selectedTargetId()).isNull();
+    }
+
+    @Test
     void rejectsPowerAllocationsAboveShipBudget() {
         ShipState initial = ShipState.initial(UUID.randomUUID());
 

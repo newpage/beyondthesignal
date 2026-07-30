@@ -13,6 +13,8 @@ public record ShipState(
     Vector3 velocity,
     double headingDegrees,
     int throttle,
+    boolean shieldsRaised,
+    UUID selectedTargetId,
     Map<ShipSubsystem, SubsystemState> subsystems
 ) {
     public ShipState {
@@ -48,6 +50,6 @@ public record ShipState(
         systems.put(ShipSubsystem.WEAPONS, SubsystemState.nominal(15));
         systems.put(ShipSubsystem.LIFE_SUPPORT, SubsystemState.nominal(10));
 
-        return new ShipState(sessionId, 0, Vector3.ZERO, Vector3.ZERO, 0.0, 0, systems);
+        return new ShipState(sessionId, 0, Vector3.ZERO, Vector3.ZERO, 0.0, 0, false, null, systems);
     }
 }

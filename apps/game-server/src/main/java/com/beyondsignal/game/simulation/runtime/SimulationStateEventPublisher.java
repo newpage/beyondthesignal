@@ -39,6 +39,10 @@ public final class SimulationStateEventPublisher implements SimulationStateListe
         payload.put("velocity", Map.copyOf(velocity));
         payload.put("headingDegrees", state.headingDegrees());
         payload.put("throttle", state.throttle());
+        payload.put("shieldsRaised", state.shieldsRaised());
+        if (state.selectedTargetId() != null) {
+            payload.put("selectedTargetId", state.selectedTargetId().toString());
+        }
 
         publisher.publish(new SessionEvent(
             state.sessionId(),

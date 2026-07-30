@@ -57,7 +57,8 @@ class ReplicationConnectionTest {
                 "position", Map.of("x", 0.0, "y", 0.0, "z", 0.0),
                 "velocity", Map.of("x", 0.0, "y", 0.0, "z", 0.0),
                 "headingDegrees", 0.0,
-                "throttle", 0
+                "throttle", 0,
+                "shieldsRaised", false
             )
         );
     }

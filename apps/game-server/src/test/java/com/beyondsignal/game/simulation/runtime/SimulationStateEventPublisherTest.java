@@ -34,6 +34,8 @@ class SimulationStateEventPublisherTest {
             assertThat(event.payload()).containsEntry("tick", 0L);
             assertThat(event.payload()).containsEntry("headingDegrees", 0.0);
             assertThat(event.payload()).containsEntry("throttle", 0);
+            assertThat(event.payload()).containsEntry("shieldsRaised", false);
+            assertThat(event.payload()).doesNotContainKey("selectedTargetId");
         });
     }
 }
