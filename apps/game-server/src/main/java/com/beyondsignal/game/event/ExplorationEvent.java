@@ -1,0 +1,8 @@
+package com.beyondsignal.game.event;
+import java.util.*;
+public record ExplorationEvent(String id,ExplorationEventType type,String title,String description,String systemId,long generatedAtTick,List<ExplorationChoice> choices,ExplorationEventStatus status,ExplorationChoice selectedChoice,ExplorationOutcome outcome){
+ public ExplorationEvent{ id=req(id,"id"); type=Objects.requireNonNull(type); title=req(title,"title"); description=req(description,"description"); systemId=req(systemId,"systemId"); if(generatedAtTick<0) throw new IllegalArgumentException("generatedAtTick cannot be negative"); choices=List.copyOf(Objects.requireNonNull(choices)); status=Objects.requireNonNull(status); if(choices.isEmpty()) throw new IllegalArgumentException("choices cannot be empty"); }
+ public static ExplorationEvent pending(String id,ExplorationEventType type,String title,String description,String systemId,long tick,List<ExplorationChoice> choices){ return new ExplorationEvent(id,type,title,description,systemId,tick,choices,ExplorationEventStatus.PENDING,null,null);}
+ public ExplorationEvent resolve(ExplorationChoice choice,ExplorationEventStatus s,ExplorationOutcome o){ if(status!=ExplorationEventStatus.PENDING) throw new IllegalStateException("Event is already resolved"); if(!choices.contains(choice)) throw new IllegalArgumentException("Choice is not valid for this event"); return new ExplorationEvent(id,type,title,description,systemId,generatedAtTick,choices,s,choice,o);}
+ private static String req(String v,String f){ if(v==null||v.isBlank()) throw new IllegalArgumentException(f+" is required"); return v;}
+}
