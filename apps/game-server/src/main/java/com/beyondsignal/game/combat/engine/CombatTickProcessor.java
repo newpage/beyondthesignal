@@ -7,12 +7,19 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Deterministic baseline tick processor.
- *
- * <p>Part 3A advances passive state and drains commands. Command-specific combat
- * resolution is added in Part 3B.</p>
+ * Deterministic combat tick processor.
  */
 public final class CombatTickProcessor {
+    private final CombatCommandProcessor commandProcessor;
+
+    public CombatTickProcessor() {
+        this(new CombatCommandProcessor());
+    }
+
+    public CombatTickProcessor(CombatCommandProcessor commandProcessor) {
+        this.commandProcessor = Objects.requireNonNull(commandProcessor, "commandProcessor");
+    }
+
     public CombatTickResult process(CombatEncounter encounter) {
         Objects.requireNonNull(encounter, "encounter");
         if (encounter.status() != CombatEncounterStatus.ACTIVE) {
@@ -22,11 +29,22 @@ public final class CombatTickProcessor {
         long tick = encounter.context().clock().advance();
 
         for (CombatParticipant participant : encounter.participants()) {
+            participant.tickWeapons();
             participant.shields().regenerate();
         }
 
         List<CombatCommand> commands = encounter.drainCommands();
         List<CombatEvent> produced = new ArrayList<>();
+
+        for (CombatCommand command : commands) {
+            List<CombatEvent> commandEvents = commandProcessor.process(encounter, command);
+            for (CombatEvent event : commandEvents) {
+                if (!encounter.events().contains(event)) {
+                    encounter.appendEvent(event);
+                }
+            }
+            produced.addAll(commandEvents);
+        }
 
         encounter.evaluateCompletion();
 

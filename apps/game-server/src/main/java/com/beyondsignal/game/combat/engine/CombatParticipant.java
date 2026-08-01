@@ -3,6 +3,7 @@ package com.beyondsignal.game.combat.engine;
 import com.beyondsignal.game.combat.model.CombatSide;
 import com.beyondsignal.game.combat.shield.ShieldModel;
 import com.beyondsignal.game.combat.weapon.WeaponMountState;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,7 +37,7 @@ public final class CombatParticipant {
         this.participantId = Objects.requireNonNull(participantId, "participantId");
         this.side = Objects.requireNonNull(side, "side");
         this.shields = Objects.requireNonNull(shields, "shields");
-        this.weapons = List.copyOf(Objects.requireNonNull(weapons, "weapons"));
+        this.weapons = new ArrayList<>(Objects.requireNonNull(weapons, "weapons"));
         if (maximumHull < 1) {
             throw new IllegalArgumentException("maximumHull must be positive");
         }
@@ -62,8 +63,31 @@ public final class CombatParticipant {
         return shields;
     }
 
-    public List<WeaponMountState> weapons() {
-        return weapons;
+    public synchronized List<WeaponMountState> weapons() {
+        return List.copyOf(weapons);
+    }
+
+    public synchronized Optional<WeaponMountState> weapon(UUID mountId) {
+        return weapons.stream()
+            .filter(weapon -> weapon.mountId().equals(mountId))
+            .findFirst();
+    }
+
+    public synchronized void replaceWeapon(WeaponMountState replacement) {
+        Objects.requireNonNull(replacement, "replacement");
+        for (int index = 0; index < weapons.size(); index++) {
+            if (weapons.get(index).mountId().equals(replacement.mountId())) {
+                weapons.set(index, replacement);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Unknown weapon mount: " + replacement.mountId());
+    }
+
+    public synchronized void tickWeapons() {
+        for (int index = 0; index < weapons.size(); index++) {
+            weapons.set(index, weapons.get(index).tick());
+        }
     }
 
     public int hull() {

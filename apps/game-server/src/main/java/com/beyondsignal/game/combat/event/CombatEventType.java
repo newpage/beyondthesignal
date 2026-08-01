@@ -1,6 +1,7 @@
 package com.beyondsignal.game.combat.event;
 
 public enum CombatEventType {
+    TARGET_SELECTED,
     WEAPON_CHARGED,
     WEAPON_FIRED,
     WEAPON_HIT,
