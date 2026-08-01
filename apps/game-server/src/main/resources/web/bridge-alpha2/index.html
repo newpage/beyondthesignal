@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Beyond the Signal — Bridge</title>
+  <style>
+    body { margin:0; font-family:system-ui,sans-serif; background:#071018; color:#d9f7ff; }
+    header { padding:16px 24px; background:#0c1d2a; border-bottom:1px solid #26516b; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; padding:16px; }
+    .panel { background:#0b1721; border:1px solid #21465d; border-radius:12px; padding:16px; }
+    h2 { margin-top:0; color:#84e1ff; }
+    button { background:#17384a; color:white; border:1px solid #3b7898; padding:9px 12px; border-radius:8px; margin:4px; cursor:pointer; }
+    input, select { background:#061018; color:white; border:1px solid #3b7898; padding:8px; border-radius:7px; }
+    pre { overflow:auto; min-height:220px; background:#050b10; padding:12px; border-radius:8px; }
+  </style>
+</head>
+<body>
+<header>
+  <strong>BEYOND THE SIGNAL</strong> — Alpha 2 Shared Bridge
+</header>
+<div class="grid">
+  <section class="panel">
+    <h2>Captain</h2>
+    <button onclick="send('SET_ALERT_STATUS',{status:'NORMAL'})">Normal</button>
+    <button onclick="send('SET_ALERT_STATUS',{status:'YELLOW'})">Yellow Alert</button>
+    <button onclick="send('SET_ALERT_STATUS',{status:'RED'})">Red Alert</button>
+  </section>
+  <section class="panel">
+    <h2>Helm</h2>
+    <input id="heading" type="number" value="90">
+    <button onclick="send('SET_HEADING',{headingDegrees:heading.value})">Set Heading</button><br>
+    <input id="throttle" type="range" min="0" max="100" value="50">
+    <button onclick="send('SET_THROTTLE',{throttle:throttle.value})">Set Throttle</button>
+  </section>
+  <section class="panel">
+    <h2>Science</h2>
+    <input id="range" type="number" value="100">
+    <button onclick="send('RUN_LONG_RANGE_SCAN',{rangeLightYears:range.value,scanSeed:Date.now().toString()})">Long-Range Scan</button>
+  </section>
+  <section class="panel">
+    <h2>Tactical</h2>
+    <button onclick="send('RAISE_SHIELDS',{})">Raise Shields</button>
+    <button onclick="send('LOWER_SHIELDS',{})">Lower Shields</button>
+    <button onclick="send('FIRE_PHASER',{})">Fire Phaser</button>
+    <button onclick="send('FIRE_TORPEDO',{})">Fire Torpedo</button>
+  </section>
+  <section class="panel">
+    <h2>Engineering</h2>
+    <select id="subsystem">
+      <option>ENGINES</option><option>SHIELDS</option><option>WEAPONS</option>
+      <option>SENSORS</option><option>LIFE_SUPPORT</option>
+    </select>
+    <input id="power" type="number" min="0" max="100" value="20">
+    <button onclick="send('ALLOCATE_POWER',{subsystem:subsystem.value,amount:power.value})">Allocate</button>
+  </section>
+  <section class="panel">
+    <h2>Communications</h2>
+    <input id="recipient" value="Unknown Vessel">
+    <button onclick="send('OPEN_CHANNEL',{recipient:recipient.value})">Open Channel</button>
+  </section>
+  <section class="panel" style="grid-column:1/-1">
+    <h2>Authoritative State</h2>
+    <pre id="state">Connect this UI to the Bridge WebSocket/API adapter.</pre>
+  </section>
+</div>
+<script>
+function send(type,args){
+  const envelope={type,args,issuedAt:new Date().toISOString()};
+  document.getElementById('state').textContent=
+    'Command envelope\n'+JSON.stringify(envelope,null,2)+
+    '\n\nThe server adapter should attach playerId and station.';
+}
+</script>
+</body>
+</html>
