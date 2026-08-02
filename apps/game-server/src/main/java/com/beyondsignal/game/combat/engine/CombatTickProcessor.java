@@ -5,26 +5,34 @@ import com.beyondsignal.game.combat.event.CombatEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import com.beyondsignal.game.combat.projectile.ProjectileLifecycleProcessor;
 
 /**
  * Deterministic combat tick processor.
- *
- * <p>The processor is the single authority that assigns final event sequence
- * numbers. Command processors may create several immutable events before any
- * one of them is appended to the encounter log, so their provisional sequence
- * values cannot be trusted for a batch.</p>
  */
 public final class CombatTickProcessor {
     private final CombatCommandProcessor commandProcessor;
+    private final ProjectileLifecycleProcessor projectileProcessor;
 
     public CombatTickProcessor() {
-        this(new CombatCommandProcessor());
+        this(new CombatCommandProcessor(), new ProjectileLifecycleProcessor());
     }
 
     public CombatTickProcessor(CombatCommandProcessor commandProcessor) {
+        this(commandProcessor, new ProjectileLifecycleProcessor());
+    }
+
+    public CombatTickProcessor(
+        CombatCommandProcessor commandProcessor,
+        ProjectileLifecycleProcessor projectileProcessor
+    ) {
         this.commandProcessor = Objects.requireNonNull(
             commandProcessor,
             "commandProcessor"
+        );
+        this.projectileProcessor = Objects.requireNonNull(
+            projectileProcessor,
+            "projectileProcessor"
         );
     }
 
@@ -45,18 +53,18 @@ public final class CombatTickProcessor {
         List<CombatEvent> produced = new ArrayList<>();
 
         for (CombatCommand command : commands) {
-            List<CombatEvent> commandEvents =
-                commandProcessor.process(encounter, command);
-
-            for (CombatEvent event : commandEvents) {
-                CombatEvent sequenced = withSequence(
-                    event,
-                    encounter.nextEventSequence()
-                );
-                encounter.appendEvent(sequenced);
-                produced.add(sequenced);
-            }
+            appendSequenced(
+                encounter,
+                produced,
+                commandProcessor.process(encounter, command)
+            );
         }
+
+        appendSequenced(
+            encounter,
+            produced,
+            projectileProcessor.advance(encounter, tick)
+        );
 
         encounter.evaluateCompletion();
 
@@ -66,6 +74,21 @@ public final class CombatTickProcessor {
             produced,
             encounter.status()
         );
+    }
+
+    private static void appendSequenced(
+        CombatEncounter encounter,
+        List<CombatEvent> produced,
+        List<CombatEvent> events
+    ) {
+        for (CombatEvent event : events) {
+            CombatEvent sequenced = withSequence(
+                event,
+                encounter.nextEventSequence()
+            );
+            encounter.appendEvent(sequenced);
+            produced.add(sequenced);
+        }
     }
 
     private static CombatEvent withSequence(

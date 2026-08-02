@@ -15,6 +15,7 @@ public record BattleCapabilities(Set<BattleCapability> enabled) {
         return new BattleCapabilities(Set.of(
             BattleCapability.SHIPS,
             BattleCapability.MOVEMENT,
+            BattleCapability.PROJECTILES,
             BattleCapability.DEBUG
         ));
     }

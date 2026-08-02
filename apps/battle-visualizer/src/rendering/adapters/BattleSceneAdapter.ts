@@ -2,6 +2,7 @@ import type { BattleFrame, CombatVisualEvent, Vector3 } from "../../types";
 import {
   SceneGraph,
   type EngagementSceneNode,
+  type ProjectileSceneNode,
   type ShipSceneNode,
 } from "../scene/SceneGraph";
 
@@ -58,6 +59,34 @@ export class BattleSceneAdapter {
       scene.upsert(engagement);
     }
 
+    for (const projectile of frame.projectiles ?? []) {
+      const source = ships.get(projectile.sourceId);
+      const target = ships.get(projectile.targetId);
+      if (!source || !target) continue;
+
+      const node: ProjectileSceneNode = {
+        id: `projectile:${projectile.id}`,
+        type: "PROJECTILE",
+        visible: projectile.status === "IN_FLIGHT",
+        worldPosition: {
+          x: source.position.x
+            + (target.position.x - source.position.x) * projectile.progress,
+          y: source.position.y
+            + (target.position.y - source.position.y) * projectile.progress,
+          z: source.position.z
+            + (target.position.z - source.position.z) * projectile.progress,
+        },
+        sourceShipId: source.id,
+        targetShipId: target.id,
+        weaponId: projectile.weaponId,
+        progress: projectile.progress,
+        sourcePosition: source.position,
+        targetPosition: target.position,
+        side: source.side,
+      };
+      scene.upsert(node);
+    }
+
     (frame.events ?? []).forEach((event, index) => {
       if (event.type !== "BEAM_FIRED" || !event.sourceId || !event.targetId) {
         return;
@@ -97,7 +126,7 @@ export class BattleSceneAdapter {
                 ? "SHIELD"
                 : "MISS",
       };
-      scene.upsert(beam);;
+      scene.upsert(beam);
     });
 
     return scene;

@@ -5,6 +5,7 @@ import com.beyondsignal.game.combat.event.CombatEvent;
 import com.beyondsignal.game.combat.log.CombatLog;
 import com.beyondsignal.game.combat.model.CombatId;
 import com.beyondsignal.game.combat.model.CombatSide;
+import com.beyondsignal.game.combat.projectile.ProjectileState;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -22,6 +23,7 @@ public final class CombatEncounter {
     private final CombatContext context;
     private final Map<UUID, CombatParticipant> participants = new LinkedHashMap<>();
     private final Queue<CombatCommand> commandQueue = new ArrayDeque<>();
+    private final Map<UUID, ProjectileState> projectiles = new LinkedHashMap<>();
     private final CombatLog combatLog = new CombatLog();
 
     private CombatEncounterStatus status = CombatEncounterStatus.INITIALIZING;
@@ -68,6 +70,37 @@ public final class CombatEncounter {
 
     public synchronized Collection<CombatParticipant> participants() {
         return List.copyOf(participants.values());
+    }
+
+
+    public synchronized void addProjectile(ProjectileState projectile) {
+        Objects.requireNonNull(projectile, "projectile");
+        if (projectiles.putIfAbsent(
+            projectile.projectileId(),
+            projectile
+        ) != null) {
+            throw new IllegalArgumentException(
+                "Duplicate projectile: " + projectile.projectileId()
+            );
+        }
+    }
+
+    public synchronized List<ProjectileState> projectiles() {
+        return List.copyOf(projectiles.values());
+    }
+
+    public synchronized void replaceProjectile(ProjectileState projectile) {
+        Objects.requireNonNull(projectile, "projectile");
+        if (!projectiles.containsKey(projectile.projectileId())) {
+            throw new IllegalArgumentException(
+                "Unknown projectile: " + projectile.projectileId()
+            );
+        }
+        projectiles.put(projectile.projectileId(), projectile);
+    }
+
+    public synchronized void removeProjectile(UUID projectileId) {
+        projectiles.remove(projectileId);
     }
 
     public synchronized void submit(CombatCommand command) {

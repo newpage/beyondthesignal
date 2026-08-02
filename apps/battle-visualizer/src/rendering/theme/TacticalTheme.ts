@@ -18,6 +18,8 @@ export type TacticalTheme = Readonly<{
   targetLine: number;
   beamFriendly: number;
   beamHostile: number;
+  projectileFriendly: 0xffd166,
+  projectileHostile: 0xff8c42,
   shieldImpact: number;
   intelligenceProjection: number;
   intelligenceConfidence: number;
@@ -44,6 +46,8 @@ export const tacticalTheme: TacticalTheme = {
   targetLine: 0x6f88a8,
   beamFriendly: 0x58dfff,
   beamHostile: 0xff496f,
+  projectileFriendly: 0xffd166,
+  projectileHostile: 0xff8c42,
   shieldImpact: 0x9fe9ff,
   intelligenceProjection: 0x7de5ff,
   intelligenceConfidence: 0xffd36a,

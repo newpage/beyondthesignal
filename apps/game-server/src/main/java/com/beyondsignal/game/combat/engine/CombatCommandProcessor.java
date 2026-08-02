@@ -6,6 +6,7 @@ import com.beyondsignal.game.combat.command.NoOpCombatCommand;
 import com.beyondsignal.game.combat.command.SelectCombatTargetCommand;
 import com.beyondsignal.game.combat.event.CombatEvent;
 import com.beyondsignal.game.combat.weapon.WeaponMountState;
+import com.beyondsignal.game.combat.projectile.ProjectileLaunchService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -16,13 +17,15 @@ public final class CombatCommandProcessor {
     private final FireControlComputer fireControl;
     private final CombatEventFactory eventFactory;
     private final BeamDamageResolver beamDamageResolver;
+    private final ProjectileLaunchService projectileLaunchService;
 
     public CombatCommandProcessor() {
         this(
             new TargetManager(),
             new FireControlComputer(),
             new CombatEventFactory(),
-            new BeamDamageResolver()
+            new BeamDamageResolver(),
+            new ProjectileLaunchService()
         );
     }
 
@@ -35,7 +38,8 @@ public final class CombatCommandProcessor {
             targetManager,
             fireControl,
             eventFactory,
-            new BeamDamageResolver()
+            new BeamDamageResolver(),
+            new ProjectileLaunchService()
         );
     }
 
@@ -43,7 +47,8 @@ public final class CombatCommandProcessor {
         TargetManager targetManager,
         FireControlComputer fireControl,
         CombatEventFactory eventFactory,
-        BeamDamageResolver beamDamageResolver
+        BeamDamageResolver beamDamageResolver,
+        ProjectileLaunchService projectileLaunchService
     ) {
         this.targetManager = Objects.requireNonNull(
             targetManager,
@@ -60,6 +65,10 @@ public final class CombatCommandProcessor {
         this.beamDamageResolver = Objects.requireNonNull(
             beamDamageResolver,
             "beamDamageResolver"
+        );
+        this.projectileLaunchService = Objects.requireNonNull(
+            projectileLaunchService,
+            "projectileLaunchService"
         );
     }
 
@@ -117,18 +126,22 @@ public final class CombatCommandProcessor {
         events.add(eventFactory.weaponFired(encounter, solution));
 
         if (weapon.definition().type()
-            == com.beyondsignal.game.combat.weapon.WeaponType.BEAM) {
-            events.add(eventFactory.beamFired(encounter, solution));
-        }
-
-        events.add(eventFactory.weaponResult(encounter, solution));
-
-        if (!solution.hit()) {
+            == com.beyondsignal.game.combat.weapon.WeaponType.PROJECTILE) {
+            var projectile = projectileLaunchService.launch(
+                encounter,
+                solution
+            );
+            events.add(eventFactory.projectileCreated(
+                encounter,
+                projectile
+            ));
             return List.copyOf(events);
         }
 
-        if (weapon.definition().type()
-            != com.beyondsignal.game.combat.weapon.WeaponType.BEAM) {
+        events.add(eventFactory.beamFired(encounter, solution));
+        events.add(eventFactory.weaponResult(encounter, solution));
+
+        if (!solution.hit()) {
             return List.copyOf(events);
         }
 

@@ -7,6 +7,7 @@ import com.beyondsignal.game.presentation.frame.BattleEventView;
 import com.beyondsignal.game.presentation.frame.BattleFrameMetadata;
 import com.beyondsignal.game.presentation.frame.BattleFrameV1;
 import com.beyondsignal.game.presentation.frame.BattleShipView;
+import com.beyondsignal.game.presentation.frame.BattleProjectileView;
 import com.beyondsignal.game.presentation.frame.PresentationVector;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,6 +31,7 @@ public final class BattlePresentationMapper {
             mapShips(context),
             java.util.List.of(),
             java.util.List.of(),
+            mapProjectiles(context),
             mapEvents(context),
             debug(context)
         );
@@ -104,6 +106,28 @@ public final class BattlePresentationMapper {
         return new PresentationVector(x, y, 0.0);
     }
 
+
+    private java.util.List<BattleProjectileView> mapProjectiles(
+        PresentationContext context
+    ) {
+        return context.projectiles().stream()
+            .filter(projectile ->
+                projectile.status()
+                    == com.beyondsignal.game.combat.projectile.ProjectileStatus.IN_FLIGHT
+            )
+            .sorted(java.util.Comparator.comparing(
+                projectile -> projectile.projectileId().toString()
+            ))
+            .map(projectile -> new BattleProjectileView(
+                projectile.projectileId(),
+                projectile.sourceId(),
+                projectile.targetId(),
+                projectile.weaponId(),
+                projectile.status().name(),
+                projectile.progress(context.snapshot().tick())
+            ))
+            .toList();
+    }
 
     private java.util.List<BattleEventView> mapEvents(
         PresentationContext context

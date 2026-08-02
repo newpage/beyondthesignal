@@ -33,6 +33,8 @@ const frame = (tick: number): BattleFrame => ({
       shields: 0.4,
     },
   ],
+  projectiles: [],
+  events: [],
 });
 
 describe("BattleSceneAdapter", () => {
@@ -45,7 +47,7 @@ describe("BattleSceneAdapter", () => {
     expect(ships[0]?.selectedTargetId).toBe("hostile");
   });
 
-  it("creates engagement nodes for valid selected targets", () => {
+  it("creates non-firing target links for valid selected targets", () => {
     const scene = new BattleSceneAdapter().adapt(frame(2));
     const engagements = scene.byType<EngagementSceneNode>("ENGAGEMENT");
 
@@ -54,20 +56,52 @@ describe("BattleSceneAdapter", () => {
       sourceShipId: "friendly",
       targetShipId: "hostile",
       side: "ALLIANCE",
-      firing: true,
+      firing: false,
+      impactType: "NONE",
     });
   });
 
-  it("derives weapon pulse state from simulation tick", () => {
-    const firing = new BattleSceneAdapter()
-      .adapt(frame(4))
-      .byType<EngagementSceneNode>("ENGAGEMENT")[0];
-    const cooling = new BattleSceneAdapter()
-      .adapt(frame(8))
-      .byType<EngagementSceneNode>("ENGAGEMENT")[0];
+  it("creates active weapon pulses only from beam events", () => {
+    const eventFrame: BattleFrame = {
+      ...frame(4),
+      events: [
+        {
+          tick: 4,
+          type: "BEAM_FIRED",
+          message: "Beam fired",
+          sourceId: "friendly",
+          targetId: "hostile",
+          attributes: { sequence: "3" },
+        },
+        {
+          tick: 4,
+          type: "SHIELD_IMPACT",
+          message: "Shield impacted",
+          sourceId: "friendly",
+          targetId: "hostile",
+          attributes: { sequence: "4" },
+        },
+      ],
+    };
 
-    expect(firing?.firing).toBe(true);
-    expect(cooling?.firing).toBe(false);
-    expect(cooling?.pulsePhase).toBeCloseTo(0.4);
+    const engagements = new BattleSceneAdapter()
+      .adapt(eventFrame)
+      .byType<EngagementSceneNode>("ENGAGEMENT");
+
+    expect(engagements).toHaveLength(2);
+
+    const targetLink = engagements.find((value) =>
+      value.id.startsWith("engagement:")
+    );
+    const beam = engagements.find((value) =>
+      value.id.startsWith("beam:")
+    );
+
+    expect(targetLink?.firing).toBe(false);
+    expect(beam).toMatchObject({
+      firing: true,
+      pulsePhase: 0,
+      impactType: "SHIELD",
+    });
   });
 });

@@ -2,6 +2,7 @@ package com.beyondsignal.game.presentation.context;
 
 import com.beyondsignal.game.combat.ai.snapshot.CombatAiSnapshot;
 import com.beyondsignal.game.combat.event.CombatEvent;
+import com.beyondsignal.game.combat.projectile.ProjectileState;
 import java.util.List;
 import java.time.Instant;
 import java.util.Objects;
@@ -13,7 +14,8 @@ public record PresentationContext(
     Instant generatedAt,
     PresentationConfiguration configuration,
     PresentationDebugOptions debugOptions,
-    List<CombatEvent> combatEvents
+    List<CombatEvent> combatEvents,
+    List<ProjectileState> projectiles
 ) {
     public PresentationContext {
         snapshot = Objects.requireNonNull(snapshot, "snapshot");
@@ -25,6 +27,9 @@ public record PresentationContext(
         debugOptions = Objects.requireNonNull(debugOptions, "debugOptions");
         combatEvents = List.copyOf(
             Objects.requireNonNull(combatEvents, "combatEvents")
+        );
+        projectiles = List.copyOf(
+            Objects.requireNonNull(projectiles, "projectiles")
         );
     }
 
@@ -43,6 +48,28 @@ public record PresentationContext(
             generatedAt,
             configuration,
             debugOptions,
+            List.of(),
+            List.of()
+        );
+    }
+
+    public PresentationContext(
+        CombatAiSnapshot snapshot,
+        long seed,
+        long frameSequence,
+        Instant generatedAt,
+        PresentationConfiguration configuration,
+        PresentationDebugOptions debugOptions,
+        List<CombatEvent> combatEvents
+    ) {
+        this(
+            snapshot,
+            seed,
+            frameSequence,
+            generatedAt,
+            configuration,
+            debugOptions,
+            combatEvents,
             List.of()
         );
     }

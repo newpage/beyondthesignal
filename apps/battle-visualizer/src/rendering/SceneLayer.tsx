@@ -6,8 +6,10 @@ import { ShipLayer } from "./ShipLayer";
 import type {
   EngagementSceneNode,
   ShipSceneNode,
+  ProjectileSceneNode,
 } from "./scene/SceneGraph";
 import { WeaponEffectLayer } from "./WeaponEffectLayer";
+import { ProjectileLayer } from "./ProjectileLayer";
 
 type Props = Readonly<{
   frame: BattleFrame;
@@ -20,6 +22,7 @@ export const SceneLayer = ({ frame, selectedShipId, onSelectShip }: Props) => {
   const scene = useMemo(() => adapter.adapt(frame), [adapter, frame]);
   const ships = scene.byType<ShipSceneNode>("SHIP");
   const engagements = scene.byType<EngagementSceneNode>("ENGAGEMENT");
+  const projectiles = scene.byType<ProjectileSceneNode>("PROJECTILE");
   const selectedShip = selectedShipId
     ? ships.find((ship) => ship.id === selectedShipId)
     : undefined;
@@ -31,6 +34,7 @@ export const SceneLayer = ({ frame, selectedShipId, onSelectShip }: Props) => {
     <>
       <AIIntelligenceLayer selectedShip={selectedShip} targetShip={targetShip} />
       <WeaponEffectLayer engagements={engagements} />
+      <ProjectileLayer projectiles={projectiles} />
       <ShipLayer
         ships={ships}
         selectedShipId={selectedShipId}

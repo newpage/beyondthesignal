@@ -31,11 +31,21 @@ export type CombatVisualEvent = Readonly<{
   attributes: Readonly<Record<string, string>>;
 }>;
 
+export type ProjectileTelemetry = Readonly<{
+  id: string;
+  sourceId: string;
+  targetId: string;
+  weaponId: string;
+  status: string;
+  progress: number;
+}>;
+
 export type BattleFrame = Readonly<{
   battleId: string;
   tick: number;
   simulationTimeSeconds: number;
   ships: readonly ShipTelemetry[];
+  projectiles?: readonly ProjectileTelemetry[];
   events?: readonly CombatVisualEvent[];
 }>;
 
@@ -100,12 +110,22 @@ export type BattleEventViewV1 = Readonly<{
   attributes: Readonly<Record<string, string>>;
 }>;
 
+export type BattleProjectileViewV1 = Readonly<{
+  id: string;
+  sourceId: string;
+  targetId: string;
+  weaponId: string;
+  status: string;
+  progress: number;
+}>;
+
 export type BattleFrameV1 = Readonly<{
   metadata: BattleFrameMetadataV1;
   capabilities: Readonly<{ enabled: readonly string[] }>;
   ships: readonly BattleShipViewV1[];
   formations: readonly unknown[];
   movement: readonly unknown[];
+  projectiles?: readonly BattleProjectileViewV1[];
   events: readonly BattleEventViewV1[];
   debug: Readonly<Record<string, string>>;
 }>;

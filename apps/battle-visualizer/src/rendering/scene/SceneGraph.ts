@@ -1,6 +1,6 @@
 import type { FleetSide, Vector3 } from "../../types";
 
-export type SceneNodeType = "SHIP" | "ENGAGEMENT";
+export type SceneNodeType = "SHIP" | "ENGAGEMENT" | "PROJECTILE";
 
 export type SceneNode = Readonly<{
   id: string;
@@ -34,6 +34,17 @@ export type EngagementSceneNode = SceneNode & Readonly<{
   pulsePhase: number;
   firing: boolean;
   impactType: "NONE" | "MISS" | "SHIELD" | "HULL" | "DESTROYED";
+}>;
+
+export type ProjectileSceneNode = SceneNode & Readonly<{
+  type: "PROJECTILE";
+  sourceShipId: string;
+  targetShipId: string;
+  weaponId: string;
+  progress: number;
+  sourcePosition: Vector3;
+  targetPosition: Vector3;
+  side: FleetSide;
 }>;
 
 export class SceneGraph {

@@ -3,6 +3,8 @@ package com.beyondsignal.game.combat.engine;
 import com.beyondsignal.game.combat.event.CombatEvent;
 import com.beyondsignal.game.combat.event.CombatEventType;
 import java.time.Instant;
+import com.beyondsignal.game.combat.projectile.ProjectileDamageResolution;
+import com.beyondsignal.game.combat.projectile.ProjectileState;
 import java.util.Map;
 
 public final class CombatEventFactory {
@@ -160,6 +162,128 @@ public CombatEvent shipDestroyed(
         encounter.participant(solution.targetId()).orElseThrow(),
         CombatEventType.SHIP_DESTROYED,
         Map.of("weaponId", solution.weapon().definition().id())
+    );
+}
+
+public CombatEvent projectileCreated(
+    CombatEncounter encounter,
+    ProjectileState projectile
+) {
+    return projectileEvent(
+        encounter,
+        projectile,
+        CombatEventType.PROJECTILE_CREATED,
+        Map.of(
+            "projectileId", projectile.projectileId().toString(),
+            "weaponId", projectile.weaponId(),
+            "launchTick", Long.toString(projectile.launchTick()),
+            "impactTick", Long.toString(projectile.impactTick()),
+            "predictedHit", Boolean.toString(projectile.predictedHit())
+        )
+    );
+}
+
+public CombatEvent projectileImpact(
+    CombatEncounter encounter,
+    ProjectileState projectile
+) {
+    return projectileEvent(
+        encounter,
+        projectile,
+        CombatEventType.PROJECTILE_IMPACT,
+        Map.of(
+            "projectileId", projectile.projectileId().toString(),
+            "weaponId", projectile.weaponId()
+        )
+    );
+}
+
+public CombatEvent projectileExpired(
+    CombatEncounter encounter,
+    ProjectileState projectile,
+    String reason
+) {
+    return projectileEvent(
+        encounter,
+        projectile,
+        CombatEventType.PROJECTILE_EXPIRED,
+        Map.of(
+            "projectileId", projectile.projectileId().toString(),
+            "weaponId", projectile.weaponId(),
+            "reason", reason
+        )
+    );
+}
+
+public CombatEvent projectileShieldImpact(
+    CombatEncounter encounter,
+    ProjectileState projectile,
+    ProjectileDamageResolution resolution
+) {
+    var impact = resolution.shieldImpact();
+    return projectileEvent(
+        encounter,
+        projectile,
+        CombatEventType.SHIELD_IMPACT,
+        Map.of(
+            "projectileId", projectile.projectileId().toString(),
+            "quadrant", impact.quadrant().name(),
+            "incomingDamage", Integer.toString(impact.incomingDamage()),
+            "absorbedDamage", Integer.toString(impact.absorbedDamage()),
+            "penetratingDamage", Integer.toString(impact.penetratingDamage())
+        )
+    );
+}
+
+public CombatEvent projectileHullDamage(
+    CombatEncounter encounter,
+    ProjectileState projectile,
+    ProjectileDamageResolution resolution
+) {
+    return projectileEvent(
+        encounter,
+        projectile,
+        CombatEventType.HULL_DAMAGE,
+        Map.of(
+            "projectileId", projectile.projectileId().toString(),
+            "damage", Integer.toString(resolution.hullDamage()),
+            "hullRemaining", Integer.toString(resolution.hullRemaining())
+        )
+    );
+}
+
+public CombatEvent projectileDestroyedShip(
+    CombatEncounter encounter,
+    ProjectileState projectile
+) {
+    return projectileEvent(
+        encounter,
+        projectile,
+        CombatEventType.SHIP_DESTROYED,
+        Map.of(
+            "projectileId", projectile.projectileId().toString(),
+            "weaponId", projectile.weaponId()
+        )
+    );
+}
+
+private CombatEvent projectileEvent(
+    CombatEncounter encounter,
+    ProjectileState projectile,
+    CombatEventType type,
+    Map<String, String> payload
+) {
+    return new CombatEvent(
+        encounter.combatId(),
+        encounter.nextEventSequence(),
+        encounter.context().clock().currentTick(),
+        projectile.sourceId(),
+        projectile.targetId(),
+        type,
+        Instant.EPOCH.plusMillis(
+            encounter.context().clock().currentTick()
+        ),
+        payload
     );
 }
 

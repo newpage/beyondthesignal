@@ -32,6 +32,7 @@ describe("BattleSceneAdapter combat events", () => {
           shields: 0.8,
         },
       ],
+      projectiles: [],
       events: [
         {
           tick: 7,

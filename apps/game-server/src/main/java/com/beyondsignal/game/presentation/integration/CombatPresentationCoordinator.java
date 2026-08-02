@@ -69,7 +69,8 @@ public final class CombatPresentationCoordinator
             deterministicTimestamp(snapshot.tick()),
             configuration,
             debugOptions,
-            events
+            events,
+            encounter.projectiles()
         ));
     }
 

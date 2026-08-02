@@ -20,6 +20,20 @@ import java.util.UUID;
 
 public final class DeveloperBattleRuntime implements AutoCloseable {
     private static final double ENGAGEMENT_DISTANCE = 1_000.0;
+    private static final WeaponDefinition DEMO_PROJECTILE = new WeaponDefinition(
+        "developer-torpedo",
+        "Developer Torpedo",
+        WeaponType.PROJECTILE,
+        DamageType.KINETIC,
+        WeaponArc.FORWARD,
+        32,
+        10_000.0,
+        0.88,
+        0,
+        24,
+        1
+    );
+
     private static final WeaponDefinition DEMO_BEAM = new WeaponDefinition(
         "developer-phaser",
         "Developer Phaser",
@@ -121,6 +135,21 @@ public final class DeveloperBattleRuntime implements AutoCloseable {
 
             participant.weapons().stream()
                 .filter(WeaponMountState::readyToFire)
+                .sorted((left, right) -> {
+                    boolean projectileTick =
+                        encounter.context().clock().currentTick() % 30 == 0;
+                    if (left.definition().type() == right.definition().type()) {
+                        return left.mountId().compareTo(right.mountId());
+                    }
+                    if (projectileTick) {
+                        return left.definition().type() == WeaponType.PROJECTILE
+                            ? -1
+                            : 1;
+                    }
+                    return left.definition().type() == WeaponType.BEAM
+                        ? -1
+                        : 1;
+                })
                 .findFirst()
                 .ifPresent(weapon -> engine.submit(
                     new FireCombatWeaponCommand(
@@ -161,7 +190,16 @@ public final class DeveloperBattleRuntime implements AutoCloseable {
             participantId,
             side,
             ShieldModel.uniform(100, 1),
-            List.of(WeaponMountState.ready(mountId, DEMO_BEAM, 0)),
+            List.of(
+                WeaponMountState.ready(mountId, DEMO_BEAM, 0),
+                WeaponMountState.ready(
+                    UUID.nameUUIDFromBytes(
+                        (stableName + "-torpedo").getBytes()
+                    ),
+                    DEMO_PROJECTILE,
+                    8
+                )
+            ),
             100,
             0.8,
             0.2
