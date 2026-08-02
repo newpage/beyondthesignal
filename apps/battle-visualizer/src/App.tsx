@@ -99,7 +99,7 @@ export const App = () => {
         <aside className="legend">
           <span><i className="alliance" />Alliance</span>
           <span><i className="hostile" />Hostile</span>
-          <small>Drag to pan · Wheel to zoom · Double-click to reset</small>
+          <small>Drag pan · Wheel zoom · Shift-drag range · Double-click reset</small>
         </aside>
       </section>
     </main>

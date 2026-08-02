@@ -24,6 +24,14 @@ export type TacticalTheme = Readonly<{
   intelligenceProjection: number;
   intelligenceConfidence: number;
   intelligenceTarget: number;
+  gridMinor: number;
+  gridMajor: number;
+  sensorRing: number;
+  axis: number;
+  targetReticle: number;
+  explosion: number;
+  explosionCore: number;
+  debris: number;
 }>;
 
 export const tacticalTheme: TacticalTheme = {
@@ -52,6 +60,14 @@ export const tacticalTheme: TacticalTheme = {
   intelligenceProjection: 0x7de5ff,
   intelligenceConfidence: 0xffd36a,
   intelligenceTarget: 0xff7f95,
+  gridMinor: 0x315a7d,
+  gridMajor: 0x4d8db8,
+  sensorRing: 0x5ab9e8,
+  axis: 0x70c6ef,
+  targetReticle: 0xffd166,
+  explosion: 0xff7a45,
+  explosionCore: 0xffd166,
+  debris: 0x8c96a8,
 };
 
 export const statusColor = (

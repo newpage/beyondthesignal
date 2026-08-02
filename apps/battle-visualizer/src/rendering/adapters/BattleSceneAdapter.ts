@@ -4,6 +4,7 @@ import {
   type EngagementSceneNode,
   type ProjectileSceneNode,
   type ShipSceneNode,
+  type WreckSceneNode,
 } from "../scene/SceneGraph";
 
 const ZERO: Vector3 = { x: 0, y: 0, z: 0 };
@@ -83,6 +84,26 @@ export class BattleSceneAdapter {
         sourcePosition: source.position,
         targetPosition: target.position,
         side: source.side,
+      };
+      scene.upsert(node);
+    }
+
+    for (const wreck of frame.wrecks ?? []) {
+      const formerShip = ships.get(wreck.formerShipId);
+      const fallback = {
+        x: ((wreck.destroyedTick * 37) % 600) - 300,
+        y: ((wreck.destroyedTick * 53) % 400) - 200,
+        z: 0,
+      };
+      const node: WreckSceneNode = {
+        id: `wreck:${wreck.id}`,
+        type: "WRECK",
+        visible: true,
+        worldPosition: formerShip?.position ?? fallback,
+        formerShipId: wreck.formerShipId,
+        faction: wreck.faction,
+        destroyedTick: wreck.destroyedTick,
+        cause: wreck.cause,
       };
       scene.upsert(node);
     }

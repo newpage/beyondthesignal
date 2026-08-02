@@ -9,6 +9,7 @@ import { useCameraController } from "./camera/useCameraController";
 import { SceneLayer } from "./SceneLayer";
 import { Starfield } from "./Starfield";
 import { tacticalTheme } from "./theme/TacticalTheme";
+import { TacticalGridLayer } from "./TacticalGridLayer";
 
 extend({ Container, Graphics, Text });
 
@@ -44,6 +45,7 @@ export const BattleViewport = ({
             scale={camera.state.zoom}
           >
             <Starfield />
+            <TacticalGridLayer />
             <SceneLayer
               frame={frame}
               selectedShipId={selectedShipId}

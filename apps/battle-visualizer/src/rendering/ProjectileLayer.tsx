@@ -19,18 +19,38 @@ const ProjectileGlyph = ({
       const length = Math.max(0.001, Math.hypot(dx, dy));
       const ux = dx / length;
       const uy = dy / length;
-      const trail = 28;
       const color = projectile.side === "ALLIANCE"
         ? tacticalTheme.projectileFriendly
         : tacticalTheme.projectileHostile;
 
       graphics.clear();
-      graphics
-        .moveTo(x - ux * trail, y - uy * trail)
-        .lineTo(x, y)
-        .stroke({ color, alpha: 0.55, width: 2 });
-      graphics.circle(x, y, 4).fill({ color, alpha: 0.95 });
-      graphics.circle(x, y, 8).stroke({ color, alpha: 0.35, width: 1 });
+
+      [44, 30, 18].forEach((trail, index) => {
+        graphics
+          .moveTo(x - ux * trail, y - uy * trail)
+          .lineTo(x, y)
+          .stroke({
+            color,
+            alpha: 0.18 + index * 0.18,
+            width: 1 + index,
+          });
+      });
+
+      graphics.circle(x, y, 10).fill({ color, alpha: 0.12 });
+      graphics.circle(x, y, 5).fill({ color, alpha: 0.98 });
+      graphics.circle(x, y, 12).stroke({
+        color,
+        alpha: 0.36,
+        width: 1,
+      });
+
+      const targetX = projectile.targetPosition.x * WORLD_SCALE;
+      const targetY = projectile.targetPosition.y * WORLD_SCALE;
+      graphics.circle(targetX, targetY, 16).stroke({
+        color,
+        alpha: 0.2,
+        width: 1,
+      });
     },
     [projectile],
   );

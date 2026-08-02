@@ -37,7 +37,7 @@ export type EngagementSceneNode = SceneNode & Readonly<{
 }>;
 
 export type ProjectileSceneNode = SceneNode & Readonly<{
-  type: "PROJECTILE" | "WRECK";
+  type: "PROJECTILE";
   sourceShipId: string;
   targetShipId: string;
   weaponId: string;

@@ -1,4 +1,5 @@
 import type { BattleFrame, ConnectionState } from "../types";
+import { deriveTacticalStatus } from "./tacticalStatus";
 
 type Props = Readonly<{
   frame: BattleFrame;
@@ -25,20 +26,24 @@ export const TacticalHud = ({
   onToggleFollow,
   onClearMeasurement,
 }: Props) => {
-  const alliance = frame.ships.filter((ship) => ship.side === "ALLIANCE").length;
-  const hostile = frame.ships.length - alliance;
+  const status = deriveTacticalStatus(frame);
 
   return (
-    <aside className="tactical-hud" aria-label="Battle status">
+    <aside className={`tactical-hud alert-${status.alertLevel.toLowerCase()}`} aria-label="Battle status">
       <div className="hud-section">
-        <span className="hud-label">Battle</span>
+        <span className="hud-label">Battle Command</span>
         <strong>{frame.battleId.slice(0, 12)}</strong>
+        <span className={`alert-badge ${status.alertLevel.toLowerCase()}`}>
+          {status.alertLevel}
+        </span>
       </div>
       <dl>
         <div><dt>Tick</dt><dd>{frame.tick.toLocaleString()}</dd></div>
         <div><dt>Ships</dt><dd>{frame.ships.length}</dd></div>
-        <div><dt>Alliance</dt><dd>{alliance}</dd></div>
-        <div><dt>Hostile</dt><dd>{hostile}</dd></div>
+        <div><dt>Alliance</dt><dd>{status.allianceShips}</dd></div>
+        <div><dt>Hostile</dt><dd>{status.hostileShips}</dd></div>
+        <div><dt>Torpedoes</dt><dd>{status.activeProjectiles}</dd></div>
+        <div><dt>Wrecks</dt><dd>{status.wrecks}</dd></div>
         <div><dt>Zoom</dt><dd>{Math.round(zoom * 100)}%</dd></div>
         <div><dt>Telemetry</dt><dd data-state={connectionState}>{connectionState}</dd></div>
       </dl>

@@ -58,6 +58,10 @@ const EngagementEffect = ({ engagement }: { engagement: EngagementSceneNode }) =
       graphics
         .moveTo(sourceX, sourceY)
         .lineTo(targetX, targetY)
+        .stroke({ color: beamColor, alpha: 0.18, width: 10 });
+      graphics
+        .moveTo(sourceX, sourceY)
+        .lineTo(targetX, targetY)
         .stroke({ color: beamColor, alpha: pulseAlpha, width: 3 });
       graphics
         .moveTo(sourceX, sourceY)
@@ -83,8 +87,35 @@ const EngagementEffect = ({ engagement }: { engagement: EngagementSceneNode }) =
 
       if (engagement.impactType !== "MISS") {
         graphics
-          .circle(targetX, targetY, engagement.impactType === "DESTROYED" ? 12 : 6)
-          .fill({ color: impactColor, alpha: 0.72 });
+          .circle(
+            targetX,
+            targetY,
+            engagement.impactType === "DESTROYED" ? 18 : 9,
+          )
+          .fill({ color: impactColor, alpha: 0.2 });
+        graphics
+          .circle(
+            targetX,
+            targetY,
+            engagement.impactType === "DESTROYED" ? 12 : 6,
+          )
+          .fill({ color: impactColor, alpha: 0.78 });
+
+        for (let ray = 0; ray < 8; ray += 1) {
+          const angle = ray * Math.PI / 4;
+          const inner = impactRadius * 0.45;
+          const outer = impactRadius * 0.9;
+          graphics
+            .moveTo(
+              targetX + Math.cos(angle) * inner,
+              targetY + Math.sin(angle) * inner,
+            )
+            .lineTo(
+              targetX + Math.cos(angle) * outer,
+              targetY + Math.sin(angle) * outer,
+            )
+            .stroke({ color: impactColor, alpha: 0.48, width: 1.2 });
+        }
       }
     },
     [engagement],

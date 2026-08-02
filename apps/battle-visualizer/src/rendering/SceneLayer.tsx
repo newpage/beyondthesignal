@@ -12,6 +12,7 @@ import type {
 import { WeaponEffectLayer } from "./WeaponEffectLayer";
 import { ProjectileLayer } from "./ProjectileLayer";
 import { WreckLayer } from "./WreckLayer";
+import { TargetingReticleLayer } from "./TargetingReticleLayer";
 
 type Props = Readonly<{
   frame: BattleFrame;
@@ -38,7 +39,11 @@ export const SceneLayer = ({ frame, selectedShipId, onSelectShip }: Props) => {
       <AIIntelligenceLayer selectedShip={selectedShip} targetShip={targetShip} />
       <WeaponEffectLayer engagements={engagements} />
       <ProjectileLayer projectiles={projectiles} />
-      <WreckLayer wrecks={wrecks} />
+      <WreckLayer wrecks={wrecks} currentTick={frame.tick} />
+      <TargetingReticleLayer
+        selectedShip={selectedShip}
+        targetShip={targetShip}
+      />
       <ShipLayer
         ships={ships}
         selectedShipId={selectedShipId}
