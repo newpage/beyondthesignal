@@ -12,6 +12,9 @@ public record BattleFrameV1(
     List<BattleMovementView> movement,
     List<BattleProjectileView> projectiles,
     List<BattleWreckView> wrecks,
+    List<BattleFleetView> fleets,
+    List<BattleSquadronView> squadrons,
+    List<BattleFleetOrderView> orders,
     List<BattleEventView> events,
     Map<String, String> debug
 ) {
@@ -25,6 +28,9 @@ public record BattleFrameV1(
         movement = List.copyOf(movement);
         projectiles = List.copyOf(projectiles);
         wrecks = List.copyOf(wrecks);
+        fleets = List.copyOf(fleets);
+        squadrons = List.copyOf(squadrons);
+        orders = List.copyOf(orders);
         events = List.copyOf(events);
         debug = Map.copyOf(debug);
         if (!VERSION.equals(metadata.frameVersion())) {
@@ -47,6 +53,9 @@ public record BattleFrameV1(
             ships,
             formations,
             movement,
+            List.of(),
+            List.of(),
+            List.of(),
             List.of(),
             List.of(),
             events,
@@ -72,6 +81,9 @@ public BattleFrameV1(
         movement,
         projectiles,
         List.of(),
+        List.of(),
+        List.of(),
+        List.of(),
         events,
         debug
     );
@@ -86,6 +98,9 @@ public BattleFrameV1(
             movement,
             projectiles,
             wrecks,
+            fleets,
+            squadrons,
+            orders,
             events,
             debug
         );

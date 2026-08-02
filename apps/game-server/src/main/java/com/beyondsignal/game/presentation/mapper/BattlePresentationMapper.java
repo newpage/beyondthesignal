@@ -4,6 +4,9 @@ import com.beyondsignal.game.combat.ai.snapshot.CombatantSnapshot;
 import com.beyondsignal.game.combat.event.CombatEvent;
 import com.beyondsignal.game.presentation.context.PresentationContext;
 import com.beyondsignal.game.presentation.frame.BattleEventView;
+import com.beyondsignal.game.presentation.frame.BattleFleetOrderView;
+import com.beyondsignal.game.presentation.frame.BattleFleetView;
+import com.beyondsignal.game.presentation.frame.BattleSquadronView;
 import com.beyondsignal.game.presentation.frame.BattleFrameMetadata;
 import com.beyondsignal.game.presentation.frame.BattleFrameV1;
 import com.beyondsignal.game.presentation.frame.BattleShipView;
@@ -34,6 +37,9 @@ public final class BattlePresentationMapper {
             java.util.List.of(),
             mapProjectiles(context),
             mapWrecks(context),
+            mapFleets(context),
+            mapSquadrons(context),
+            mapFleetOrders(context),
             mapEvents(context),
             debug(context)
         );
@@ -147,6 +153,65 @@ private java.util.List<BattleWreckView> mapWrecks(
         ))
         .toList();
 }
+
+    private java.util.List<BattleFleetView> mapFleets(
+        PresentationContext context
+    ) {
+        return context.fleets().stream()
+            .sorted(java.util.Comparator.comparing(
+                fleet -> fleet.fleetId().toString()
+            ))
+            .map(fleet -> new BattleFleetView(
+                fleet.fleetId(),
+                fleet.name(),
+                fleet.commander(),
+                fleet.side().name(),
+                fleet.doctrine().name(),
+                fleet.squadrons().stream()
+                    .map(squadron -> squadron.squadronId())
+                    .sorted()
+                    .toList(),
+                fleet.orders().stream()
+                    .map(order -> order.orderId())
+                    .sorted()
+                    .toList()
+            ))
+            .toList();
+    }
+
+    private java.util.List<BattleSquadronView> mapSquadrons(
+        PresentationContext context
+    ) {
+        return context.squadrons().stream()
+            .map(squadron -> new BattleSquadronView(
+                squadron.squadronId(),
+                squadron.name(),
+                squadron.leaderId(),
+                squadron.memberIds(),
+                squadron.formation(),
+                squadron.currentOrder() == null
+                    ? null
+                    : squadron.currentOrder().orderId(),
+                squadron.priorityTargetId(),
+                squadron.morale(),
+                squadron.status()
+            ))
+            .toList();
+    }
+
+    private java.util.List<BattleFleetOrderView> mapFleetOrders(
+        PresentationContext context
+    ) {
+        return context.fleetOrders().stream()
+            .map(order -> new BattleFleetOrderView(
+                order.orderId(),
+                order.type().name(),
+                order.priority(),
+                order.targetId(),
+                order.parameters()
+            ))
+            .toList();
+    }
 
     private java.util.List<BattleEventView> mapEvents(
         PresentationContext context
