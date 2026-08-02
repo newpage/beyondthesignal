@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ShipInspector } from "./components/ShipInspector";
 import { SimulationClock } from "./components/SimulationClock";
+import { ReplayTimeline } from "./replay/ReplayTimeline";
 import { BattleViewport } from "./rendering/BattleViewport";
 import { BattleStore, useBattleStore } from "./state/battleStore";
 import { BattleTelemetryClient } from "./telemetry/BattleTelemetryClient";
@@ -38,6 +39,17 @@ export const App = () => {
     }
   }, [selectedShipId, snapshot.frame]);
 
+  useEffect(() => {
+    if (!snapshot.playback.playing || snapshot.atLiveEdge) return undefined;
+    const intervalMs = Math.max(20, Math.round(50 / snapshot.playback.speed));
+    const timer = window.setInterval(() => {
+      if (!store.advancePlayback()) {
+        store.setPlayback({ ...store.getSnapshot().playback, playing: false });
+      }
+    }, intervalMs);
+    return () => window.clearInterval(timer);
+  }, [snapshot.atLiveEdge, snapshot.playback.playing, snapshot.playback.speed, store]);
+
   const selectedShip = snapshot.frame.ships.find((ship) => ship.id === selectedShipId);
 
   return (
@@ -49,8 +61,15 @@ export const App = () => {
         connectionState={snapshot.connectionState}
         playback={snapshot.playback}
         queuedFrames={snapshot.queuedFrames}
+        atLiveEdge={snapshot.atLiveEdge}
+        canStepBackward={snapshot.historyIndex > 0}
+        canStepForward={snapshot.historyIndex < snapshot.historySize - 1}
         onPlaybackChange={(playback) => store.setPlayback(playback)}
-        onStepFrame={() => store.stepFrame()}
+        onStepBackward={() => store.stepBackward()}
+        onStepForward={() => store.stepForward()}
+        onJumpBackward={() => store.jumpByFrames(-10)}
+        onJumpForward={() => store.jumpByFrames(10)}
+        onJumpToLive={() => store.jumpToLive()}
       />
 
       <section className="battle-stage">
@@ -62,6 +81,20 @@ export const App = () => {
         />
 
         <ShipInspector ship={selectedShip} onClose={() => setSelectedShipId(undefined)} />
+
+        <ReplayTimeline
+          currentIndex={snapshot.historyIndex}
+          totalFrames={snapshot.historySize}
+          firstTick={snapshot.firstHistoryTick}
+          lastTick={snapshot.lastHistoryTick}
+          currentTick={snapshot.frame.tick}
+          atLiveEdge={snapshot.atLiveEdge}
+          markers={snapshot.replayMarkers}
+          bookmarks={snapshot.bookmarks}
+          onSeek={(index) => store.seek(index)}
+          onToggleBookmark={() => store.toggleBookmark()}
+          onJumpToMarker={(tick) => store.seekTick(tick)}
+        />
 
         <aside className="legend">
           <span><i className="alliance" />Alliance</span>

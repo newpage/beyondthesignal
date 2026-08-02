@@ -10,8 +10,15 @@ type Props = Readonly<{
   connectionState: ConnectionState;
   playback: PlaybackState;
   queuedFrames: number;
+  atLiveEdge: boolean;
+  canStepBackward: boolean;
+  canStepForward: boolean;
   onPlaybackChange: (playback: PlaybackState) => void;
-  onStepFrame: () => void;
+  onStepBackward: () => void;
+  onStepForward: () => void;
+  onJumpBackward: () => void;
+  onJumpForward: () => void;
+  onJumpToLive: () => void;
 }>;
 
 export const SimulationClock = ({
@@ -21,8 +28,15 @@ export const SimulationClock = ({
   connectionState,
   playback,
   queuedFrames,
+  atLiveEdge,
+  canStepBackward,
+  canStepForward,
   onPlaybackChange,
-  onStepFrame,
+  onStepBackward,
+  onStepForward,
+  onJumpBackward,
+  onJumpForward,
+  onJumpToLive,
 }: Props) => (
   <header className="simulation-clock">
     <div>
@@ -43,9 +57,21 @@ export const SimulationClock = ({
         <dt>Telemetry</dt>
         <dd data-state={connectionState}>{connectionState}</dd>
       </div>
+      <div>
+        <dt>Position</dt>
+        <dd data-state={atLiveEdge ? "CONNECTED" : "DEMO"}>
+          {atLiveEdge ? "LIVE" : `REPLAY +${queuedFrames}`}
+        </dd>
+      </div>
     </dl>
 
-    <div className="playback-controls">
+    <div className="playback-controls replay-controls">
+      <button type="button" disabled={!canStepBackward} onClick={onJumpBackward} title="Rewind 10 frames">
+        −10
+      </button>
+      <button type="button" disabled={!canStepBackward} onClick={onStepBackward} title="Previous frame">
+        ◀
+      </button>
       <button
         type="button"
         onClick={() =>
@@ -57,17 +83,22 @@ export const SimulationClock = ({
       >
         {playback.playing ? "Pause" : "Play"}
       </button>
-
+      <button type="button" disabled={!canStepForward} onClick={onStepForward} title="Next frame">
+        ▶
+      </button>
+      <button type="button" disabled={!canStepForward} onClick={onJumpForward} title="Advance 10 frames">
+        +10
+      </button>
       <button
         type="button"
-        disabled={playback.playing || queuedFrames === 0}
-        onClick={onStepFrame}
-        title="Advance one buffered telemetry frame"
+        disabled={atLiveEdge}
+        className={atLiveEdge ? "active" : undefined}
+        onClick={onJumpToLive}
       >
-        Step{queuedFrames > 0 ? ` (${queuedFrames})` : ""}
+        Live
       </button>
 
-      {[1, 2, 5, 10].map((speed) => (
+      {[0.25, 0.5, 1, 2, 5].map((speed) => (
         <button
           key={speed}
           type="button"

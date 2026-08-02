@@ -461,3 +461,100 @@ button {
 .decision-card b { font-size: 0.78rem; }
 .ai-intelligence ul { display: grid; gap: 5px; margin: 0; padding-left: 17px; color: #a9b8cd; font-size: 0.68rem; }
 .ai-intelligence small { color: #6f829e; font-size: 0.6rem; line-height: 1.4; }
+
+.replay-timeline {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 16px;
+  z-index: 15;
+  display: grid;
+  gap: 9px;
+  padding: 12px 14px 10px;
+  border: 1px solid rgba(112, 178, 255, 0.24);
+  border-radius: 10px;
+  background: rgba(3, 10, 25, 0.92);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(16px);
+}
+
+.replay-timeline header,
+.replay-timeline footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.replay-timeline header > div { display: grid; gap: 1px; }
+.replay-timeline header strong { font-size: 0.72rem; letter-spacing: 0.05em; }
+.replay-timeline header button {
+  padding: 6px 9px;
+  border: 1px solid rgba(126, 172, 247, 0.3);
+  border-radius: 6px;
+  background: rgba(50, 90, 145, 0.22);
+  color: #dcecff;
+  cursor: pointer;
+  font-size: 0.66rem;
+}
+.replay-timeline header button.active {
+  border-color: rgba(255, 211, 106, 0.76);
+  background: rgba(255, 211, 106, 0.16);
+  color: #ffe5a2;
+}
+
+.timeline-track { position: relative; height: 20px; }
+.timeline-track input[type="range"] {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  margin: 0;
+  accent-color: #6ea9ff;
+  cursor: ew-resize;
+}
+.timeline-markers {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.timeline-marker {
+  position: absolute;
+  top: 2px;
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  transform: translateX(-50%) rotate(45deg);
+  border: 0;
+  background: #6ea9ff;
+  box-shadow: 0 0 7px currentColor;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.timeline-marker.target_acquired,
+.timeline-marker.target_changed { background: #66d9ff; }
+.timeline-marker.ship_critical { background: #ffad70; }
+.timeline-marker.ship_destroyed { background: #ff5d78; }
+.timeline-marker.bookmark { background: #ffd36a; width: 9px; height: 9px; }
+
+.replay-timeline footer {
+  color: #7187a7;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.59rem;
+}
+
+.replay-controls { flex-wrap: wrap; justify-content: flex-end; }
+
+@media (max-width: 900px) {
+  .replay-timeline { right: 250px; }
+  .replay-timeline header strong { display: none; }
+}
+
+@media (max-width: 760px) {
+  .replay-timeline { right: 18px; }
+  .replay-timeline footer span:nth-child(2) { display: none; }
+}

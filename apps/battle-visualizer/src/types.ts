@@ -41,6 +41,21 @@ export type PlaybackState = Readonly<{
   speed: number;
 }>;
 
+export type ReplayMarkerType =
+  | "BATTLE_START"
+  | "TARGET_ACQUIRED"
+  | "TARGET_CHANGED"
+  | "SHIP_CRITICAL"
+  | "SHIP_DESTROYED"
+  | "BOOKMARK";
+
+export type ReplayMarker = Readonly<{
+  tick: number;
+  type: ReplayMarkerType;
+  label: string;
+  shipId?: string;
+}>;
+
 export type BattleFrameMetadataV1 = Readonly<{
   battleId: string;
   tick: number;
