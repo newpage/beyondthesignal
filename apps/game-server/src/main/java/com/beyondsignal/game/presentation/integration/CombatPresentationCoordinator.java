@@ -48,10 +48,17 @@ public final class CombatPresentationCoordinator
         CombatEncounter encounter,
         CombatTickResult tickResult
     ) {
-        publish(encounter);
+        publish(encounter, tickResult.eventsProduced());
     }
 
     public BattleFrameV1 publish(CombatEncounter encounter) {
+        return publish(encounter, java.util.List.of());
+    }
+
+    private BattleFrameV1 publish(
+        CombatEncounter encounter,
+        java.util.List<com.beyondsignal.game.combat.event.CombatEvent> events
+    ) {
         CombatAiSnapshot snapshot = snapshotFactory.create(encounter);
         long frameSequence = sequence.getAndIncrement();
 
@@ -61,7 +68,8 @@ public final class CombatPresentationCoordinator
             frameSequence,
             deterministicTimestamp(snapshot.tick()),
             configuration,
-            debugOptions
+            debugOptions,
+            events
         ));
     }
 

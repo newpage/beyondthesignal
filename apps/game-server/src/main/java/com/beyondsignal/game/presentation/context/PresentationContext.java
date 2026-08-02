@@ -1,6 +1,8 @@
 package com.beyondsignal.game.presentation.context;
 
 import com.beyondsignal.game.combat.ai.snapshot.CombatAiSnapshot;
+import com.beyondsignal.game.combat.event.CombatEvent;
+import java.util.List;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -10,7 +12,8 @@ public record PresentationContext(
     long frameSequence,
     Instant generatedAt,
     PresentationConfiguration configuration,
-    PresentationDebugOptions debugOptions
+    PresentationDebugOptions debugOptions,
+    List<CombatEvent> combatEvents
 ) {
     public PresentationContext {
         snapshot = Objects.requireNonNull(snapshot, "snapshot");
@@ -20,6 +23,28 @@ public record PresentationContext(
         generatedAt = Objects.requireNonNull(generatedAt, "generatedAt");
         configuration = Objects.requireNonNull(configuration, "configuration");
         debugOptions = Objects.requireNonNull(debugOptions, "debugOptions");
+        combatEvents = List.copyOf(
+            Objects.requireNonNull(combatEvents, "combatEvents")
+        );
+    }
+
+    public PresentationContext(
+        CombatAiSnapshot snapshot,
+        long seed,
+        long frameSequence,
+        Instant generatedAt,
+        PresentationConfiguration configuration,
+        PresentationDebugOptions debugOptions
+    ) {
+        this(
+            snapshot,
+            seed,
+            frameSequence,
+            generatedAt,
+            configuration,
+            debugOptions,
+            List.of()
+        );
     }
 
     public double simulationTimeSeconds() {

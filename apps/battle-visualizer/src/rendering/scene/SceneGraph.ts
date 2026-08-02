@@ -33,6 +33,7 @@ export type EngagementSceneNode = SceneNode & Readonly<{
   side: FleetSide;
   pulsePhase: number;
   firing: boolean;
+  impactType: "NONE" | "MISS" | "SHIELD" | "HULL" | "DESTROYED";
 }>;
 
 export class SceneGraph {

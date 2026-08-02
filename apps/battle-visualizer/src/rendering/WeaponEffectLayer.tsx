@@ -54,7 +54,7 @@ const EngagementEffect = ({ engagement }: { engagement: EngagementSceneNode }) =
 
       if (!engagement.firing) return;
 
-      const pulseAlpha = 0.65 + (1 - engagement.pulsePhase * 4) * 0.35;
+      const pulseAlpha = 0.95;
       graphics
         .moveTo(sourceX, sourceY)
         .lineTo(targetX, targetY)
@@ -64,17 +64,28 @@ const EngagementEffect = ({ engagement }: { engagement: EngagementSceneNode }) =
         .lineTo(targetX, targetY)
         .stroke({ color: 0xffffff, alpha: 0.75, width: 1 });
 
-      const impactRadius = 20 + engagement.pulsePhase * 18;
+      const impactColor = engagement.impactType === "DESTROYED"
+        ? 0xff6b35
+        : engagement.impactType === "HULL"
+          ? 0xffd166
+          : engagement.impactType === "MISS"
+            ? 0x8a94a6
+            : tacticalTheme.shieldImpact;
+      const impactRadius = engagement.impactType === "DESTROYED" ? 42 : 24;
+
       graphics
         .circle(targetX, targetY, impactRadius)
         .stroke({
-          color: tacticalTheme.shieldImpact,
-          alpha: Math.max(0.15, 0.85 - engagement.pulsePhase * 3),
-          width: 2.5,
+          color: impactColor,
+          alpha: engagement.impactType === "MISS" ? 0.35 : 0.9,
+          width: engagement.impactType === "DESTROYED" ? 4 : 2.5,
         });
-      graphics
-        .circle(targetX, targetY, 6)
-        .fill({ color: tacticalTheme.shieldImpact, alpha: 0.65 });
+
+      if (engagement.impactType !== "MISS") {
+        graphics
+          .circle(targetX, targetY, engagement.impactType === "DESTROYED" ? 12 : 6)
+          .fill({ color: impactColor, alpha: 0.72 });
+      }
     },
     [engagement],
   );

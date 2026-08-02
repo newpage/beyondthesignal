@@ -61,6 +61,108 @@ public final class CombatEventFactory {
         );
     }
 
+public CombatEvent beamFired(
+    CombatEncounter encounter,
+    FireSolution solution
+) {
+    return event(
+        encounter,
+        encounter.participant(solution.attackerId()).orElseThrow(),
+        encounter.participant(solution.targetId()).orElseThrow(),
+        CombatEventType.BEAM_FIRED,
+        Map.of(
+            "weaponMountId", solution.weapon().mountId().toString(),
+            "weaponId", solution.weapon().definition().id(),
+            "damageType", solution.weapon().definition().damageType().name(),
+            "baseDamage", Integer.toString(
+                solution.weapon().definition().baseDamage()
+            )
+        )
+    );
+}
+
+public CombatEvent beamHit(
+    CombatEncounter encounter,
+    FireSolution solution,
+    BeamDamageResolution resolution
+) {
+    return event(
+        encounter,
+        encounter.participant(solution.attackerId()).orElseThrow(),
+        encounter.participant(solution.targetId()).orElseThrow(),
+        CombatEventType.BEAM_HIT,
+        Map.of(
+            "weaponId", solution.weapon().definition().id(),
+            "quadrant", resolution.shieldImpact().quadrant().name()
+        )
+    );
+}
+
+public CombatEvent shieldImpact(
+    CombatEncounter encounter,
+    FireSolution solution,
+    BeamDamageResolution resolution
+) {
+    var impact = resolution.shieldImpact();
+    return event(
+        encounter,
+        encounter.participant(solution.attackerId()).orElseThrow(),
+        encounter.participant(solution.targetId()).orElseThrow(),
+        CombatEventType.SHIELD_IMPACT,
+        Map.of(
+            "quadrant", impact.quadrant().name(),
+            "damageType", impact.damageType().name(),
+            "incomingDamage", Integer.toString(impact.incomingDamage()),
+            "absorbedDamage", Integer.toString(impact.absorbedDamage()),
+            "penetratingDamage", Integer.toString(impact.penetratingDamage())
+        )
+    );
+}
+
+public CombatEvent shieldCollapsed(
+    CombatEncounter encounter,
+    FireSolution solution,
+    BeamDamageResolution resolution
+) {
+    return event(
+        encounter,
+        encounter.participant(solution.attackerId()).orElseThrow(),
+        encounter.participant(solution.targetId()).orElseThrow(),
+        CombatEventType.SHIELD_COLLAPSED,
+        Map.of("quadrant", resolution.shieldImpact().quadrant().name())
+    );
+}
+
+public CombatEvent hullDamage(
+    CombatEncounter encounter,
+    FireSolution solution,
+    BeamDamageResolution resolution
+) {
+    return event(
+        encounter,
+        encounter.participant(solution.attackerId()).orElseThrow(),
+        encounter.participant(solution.targetId()).orElseThrow(),
+        CombatEventType.HULL_DAMAGE,
+        Map.of(
+            "damage", Integer.toString(resolution.hullDamage()),
+            "hullRemaining", Integer.toString(resolution.hullRemaining())
+        )
+    );
+}
+
+public CombatEvent shipDestroyed(
+    CombatEncounter encounter,
+    FireSolution solution
+) {
+    return event(
+        encounter,
+        encounter.participant(solution.attackerId()).orElseThrow(),
+        encounter.participant(solution.targetId()).orElseThrow(),
+        CombatEventType.SHIP_DESTROYED,
+        Map.of("weaponId", solution.weapon().definition().id())
+    );
+}
+
     private CombatEvent event(
         CombatEncounter encounter,
         CombatParticipant source,

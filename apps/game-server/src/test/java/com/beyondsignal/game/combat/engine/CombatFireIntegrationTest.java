@@ -61,17 +61,32 @@ class CombatFireIntegrationTest {
 
         CombatTickResult result = engine.tick(combatId);
 
-        assertEquals(3, result.eventsProduced().size());
-        assertEquals(CombatEventType.TARGET_SELECTED, result.eventsProduced().get(0).type());
-        assertEquals(CombatEventType.WEAPON_FIRED, result.eventsProduced().get(1).type());
-        assertTrue(
-            result.eventsProduced().get(2).type() == CombatEventType.WEAPON_HIT
-                || result.eventsProduced().get(2).type() == CombatEventType.WEAPON_MISSED
+        assertTrue(result.eventsProduced().size() >= 4);
+        assertEquals(
+            CombatEventType.TARGET_SELECTED,
+            result.eventsProduced().get(0).type()
         );
-        assertEquals(3, encounter.events().size());
-        assertEquals(1L, encounter.events().get(0).sequence());
-        assertEquals(2L, encounter.events().get(1).sequence());
-        assertEquals(3L, encounter.events().get(2).sequence());
+        assertEquals(
+            CombatEventType.WEAPON_FIRED,
+            result.eventsProduced().get(1).type()
+        );
+        assertEquals(
+            CombatEventType.BEAM_FIRED,
+            result.eventsProduced().get(2).type()
+        );
+        assertTrue(
+            result.eventsProduced().stream().anyMatch(event ->
+                event.type() == CombatEventType.WEAPON_HIT
+                    || event.type() == CombatEventType.WEAPON_MISSED
+            )
+        );
+        assertEquals(
+            result.eventsProduced().size(),
+            encounter.events().size()
+        );
+        for (int index = 0; index < encounter.events().size(); index++) {
+            assertEquals(index + 1L, encounter.events().get(index).sequence());
+        }
         assertEquals(5, attacker.weapon(mountId).orElseThrow().cooldownRemainingTicks());
     }
 

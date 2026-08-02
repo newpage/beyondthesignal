@@ -15,9 +15,15 @@ public final class CombatCommandProcessor {
     private final TargetManager targetManager;
     private final FireControlComputer fireControl;
     private final CombatEventFactory eventFactory;
+    private final BeamDamageResolver beamDamageResolver;
 
     public CombatCommandProcessor() {
-        this(new TargetManager(), new FireControlComputer(), new CombatEventFactory());
+        this(
+            new TargetManager(),
+            new FireControlComputer(),
+            new CombatEventFactory(),
+            new BeamDamageResolver()
+        );
     }
 
     public CombatCommandProcessor(
@@ -25,9 +31,36 @@ public final class CombatCommandProcessor {
         FireControlComputer fireControl,
         CombatEventFactory eventFactory
     ) {
-        this.targetManager = Objects.requireNonNull(targetManager, "targetManager");
-        this.fireControl = Objects.requireNonNull(fireControl, "fireControl");
-        this.eventFactory = Objects.requireNonNull(eventFactory, "eventFactory");
+        this(
+            targetManager,
+            fireControl,
+            eventFactory,
+            new BeamDamageResolver()
+        );
+    }
+
+    public CombatCommandProcessor(
+        TargetManager targetManager,
+        FireControlComputer fireControl,
+        CombatEventFactory eventFactory,
+        BeamDamageResolver beamDamageResolver
+    ) {
+        this.targetManager = Objects.requireNonNull(
+            targetManager,
+            "targetManager"
+        );
+        this.fireControl = Objects.requireNonNull(
+            fireControl,
+            "fireControl"
+        );
+        this.eventFactory = Objects.requireNonNull(
+            eventFactory,
+            "eventFactory"
+        );
+        this.beamDamageResolver = Objects.requireNonNull(
+            beamDamageResolver,
+            "beamDamageResolver"
+        );
     }
 
     public List<CombatEvent> process(
@@ -81,14 +114,49 @@ public final class CombatCommandProcessor {
         actor.replaceWeapon(weapon.fire());
 
         List<CombatEvent> events = new ArrayList<>();
-        CombatEvent fired = eventFactory.weaponFired(encounter, solution);
-        events.add(fired);
-        encounter.appendEvent(fired);
+        events.add(eventFactory.weaponFired(encounter, solution));
 
-        CombatEvent result = eventFactory.weaponResult(encounter, solution);
-        events.add(result);
-        encounter.appendEvent(result);
+        if (weapon.definition().type()
+            == com.beyondsignal.game.combat.weapon.WeaponType.BEAM) {
+            events.add(eventFactory.beamFired(encounter, solution));
+        }
 
-        return events;
+        events.add(eventFactory.weaponResult(encounter, solution));
+
+        if (!solution.hit()) {
+            return List.copyOf(events);
+        }
+
+        if (weapon.definition().type()
+            != com.beyondsignal.game.combat.weapon.WeaponType.BEAM) {
+            return List.copyOf(events);
+        }
+
+        BeamDamageResolution resolution = beamDamageResolver.resolve(
+            target,
+            weapon.definition()
+        );
+        events.add(eventFactory.beamHit(encounter, solution, resolution));
+        events.add(eventFactory.shieldImpact(encounter, solution, resolution));
+
+        if (resolution.shieldCollapsedNow()) {
+            events.add(eventFactory.shieldCollapsed(
+                encounter,
+                solution,
+                resolution
+            ));
+        }
+        if (resolution.hullDamage() > 0) {
+            events.add(eventFactory.hullDamage(
+                encounter,
+                solution,
+                resolution
+            ));
+        }
+        if (resolution.targetDestroyed()) {
+            events.add(eventFactory.shipDestroyed(encounter, solution));
+        }
+
+        return List.copyOf(events);
     }
 }

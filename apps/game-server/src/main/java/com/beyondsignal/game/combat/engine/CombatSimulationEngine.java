@@ -1,6 +1,8 @@
 package com.beyondsignal.game.combat.engine;
 
 import com.beyondsignal.game.combat.command.CombatCommand;
+import com.beyondsignal.game.combat.event.CombatEventBatch;
+import com.beyondsignal.game.combat.event.CombatEventBus;
 import com.beyondsignal.game.combat.model.CombatId;
 import com.beyondsignal.game.combat.rng.SplitMix64CombatRandom;
 import java.util.LinkedHashMap;
@@ -16,18 +18,35 @@ public final class CombatSimulationEngine {
     private final Map<CombatId, CombatEncounter> encounters = new LinkedHashMap<>();
     private final CombatTickProcessor tickProcessor;
     private final CombatTickPresentationHook presentationHook;
+    private final CombatEventBus eventBus;
 
     public CombatSimulationEngine() {
-        this(new CombatTickProcessor(), CombatTickPresentationHook.noOp());
+        this(
+            new CombatTickProcessor(),
+            CombatTickPresentationHook.noOp(),
+            new CombatEventBus()
+        );
     }
 
     public CombatSimulationEngine(CombatTickProcessor tickProcessor) {
-        this(tickProcessor, CombatTickPresentationHook.noOp());
+        this(
+            tickProcessor,
+            CombatTickPresentationHook.noOp(),
+            new CombatEventBus()
+        );
     }
 
     public CombatSimulationEngine(
         CombatTickProcessor tickProcessor,
         CombatTickPresentationHook presentationHook
+    ) {
+        this(tickProcessor, presentationHook, new CombatEventBus());
+    }
+
+    public CombatSimulationEngine(
+        CombatTickProcessor tickProcessor,
+        CombatTickPresentationHook presentationHook,
+        CombatEventBus eventBus
     ) {
         this.tickProcessor = Objects.requireNonNull(
             tickProcessor,
@@ -37,6 +56,7 @@ public final class CombatSimulationEngine {
             presentationHook,
             "presentationHook"
         );
+        this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
     }
 
     public synchronized CombatEncounter createEncounter(CombatId combatId, long seed) {
@@ -75,8 +95,17 @@ public final class CombatSimulationEngine {
             throw new IllegalArgumentException("Unknown combat encounter: " + combatId);
         }
         CombatTickResult result = tickProcessor.process(encounter);
+        eventBus.publish(CombatEventBatch.from(
+            encounter.combatId(),
+            result.tick(),
+            result.eventsProduced()
+        ));
         presentationHook.onTick(encounter, result);
         return result;
+    }
+
+    public CombatEventBus eventBus() {
+        return eventBus;
     }
 
     public synchronized boolean completed(CombatId combatId) {

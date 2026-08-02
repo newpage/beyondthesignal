@@ -49,4 +49,12 @@ export const adaptBattleFrame = (frame: BattleFrameV1): BattleFrame => ({
     executionState: ship.executionState,
     confidence: ship.confidence,
   })),
+  events: (frame.events ?? []).map((event) => ({
+    tick: event.tick,
+    type: event.type,
+    message: event.message,
+    sourceId: event.attributes.sourceId,
+    targetId: event.attributes.targetId,
+    attributes: event.attributes,
+  })),
 });

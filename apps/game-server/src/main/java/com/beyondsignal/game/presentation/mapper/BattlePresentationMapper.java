@@ -1,7 +1,9 @@
 package com.beyondsignal.game.presentation.mapper;
 
 import com.beyondsignal.game.combat.ai.snapshot.CombatantSnapshot;
+import com.beyondsignal.game.combat.event.CombatEvent;
 import com.beyondsignal.game.presentation.context.PresentationContext;
+import com.beyondsignal.game.presentation.frame.BattleEventView;
 import com.beyondsignal.game.presentation.frame.BattleFrameMetadata;
 import com.beyondsignal.game.presentation.frame.BattleFrameV1;
 import com.beyondsignal.game.presentation.frame.BattleShipView;
@@ -28,7 +30,7 @@ public final class BattlePresentationMapper {
             mapShips(context),
             java.util.List.of(),
             java.util.List.of(),
-            java.util.List.of(),
+            mapEvents(context),
             debug(context)
         );
     }
@@ -102,6 +104,39 @@ public final class BattlePresentationMapper {
         return new PresentationVector(x, y, 0.0);
     }
 
+
+    private java.util.List<BattleEventView> mapEvents(
+        PresentationContext context
+    ) {
+        return context.combatEvents().stream()
+            .sorted(java.util.Comparator.comparingLong(CombatEvent::sequence))
+            .map(this::eventView)
+            .toList();
+    }
+
+    private BattleEventView eventView(CombatEvent event) {
+        Map<String, String> attributes = new LinkedHashMap<>(event.payload());
+        attributes.put("sequence", Long.toString(event.sequence()));
+        attributes.put("sourceId", event.sourceId().toString());
+        if (event.targetId() != null) {
+            attributes.put("targetId", event.targetId().toString());
+        }
+        return new BattleEventView(
+            event.tick(),
+            event.type().name(),
+            eventMessage(event),
+            attributes
+        );
+    }
+
+    private static String eventMessage(CombatEvent event) {
+        String source = shortId(event.sourceId());
+        String target = event.targetId() == null
+            ? ""
+            : " -> " + shortId(event.targetId());
+        return source + " " + event.type().name().replace('_', ' ') + target;
+    }
+
     private Map<String, String> debug(PresentationContext context) {
         Map<String, String> debug = new LinkedHashMap<>();
         debug.put("frameSequence", Long.toString(context.frameSequence()));
@@ -140,6 +175,10 @@ public final class BattlePresentationMapper {
     }
 
     private static String shortId(CombatantSnapshot combatant) {
-        return combatant.participantId().toString().substring(0, 8);
+        return shortId(combatant.participantId());
+    }
+
+    private static String shortId(java.util.UUID id) {
+        return id.toString().substring(0, 8);
     }
 }

@@ -8,6 +8,11 @@ import java.util.Objects;
 
 /**
  * Deterministic combat tick processor.
+ *
+ * <p>The processor is the single authority that assigns final event sequence
+ * numbers. Command processors may create several immutable events before any
+ * one of them is appended to the encounter log, so their provisional sequence
+ * values cannot be trusted for a batch.</p>
  */
 public final class CombatTickProcessor {
     private final CombatCommandProcessor commandProcessor;
@@ -17,7 +22,10 @@ public final class CombatTickProcessor {
     }
 
     public CombatTickProcessor(CombatCommandProcessor commandProcessor) {
-        this.commandProcessor = Objects.requireNonNull(commandProcessor, "commandProcessor");
+        this.commandProcessor = Objects.requireNonNull(
+            commandProcessor,
+            "commandProcessor"
+        );
     }
 
     public CombatTickResult process(CombatEncounter encounter) {
@@ -37,13 +45,17 @@ public final class CombatTickProcessor {
         List<CombatEvent> produced = new ArrayList<>();
 
         for (CombatCommand command : commands) {
-            List<CombatEvent> commandEvents = commandProcessor.process(encounter, command);
+            List<CombatEvent> commandEvents =
+                commandProcessor.process(encounter, command);
+
             for (CombatEvent event : commandEvents) {
-                if (!encounter.events().contains(event)) {
-                    encounter.appendEvent(event);
-                }
+                CombatEvent sequenced = withSequence(
+                    event,
+                    encounter.nextEventSequence()
+                );
+                encounter.appendEvent(sequenced);
+                produced.add(sequenced);
             }
-            produced.addAll(commandEvents);
         }
 
         encounter.evaluateCompletion();
@@ -53,6 +65,22 @@ public final class CombatTickProcessor {
             commands.size(),
             produced,
             encounter.status()
+        );
+    }
+
+    private static CombatEvent withSequence(
+        CombatEvent event,
+        long sequence
+    ) {
+        return new CombatEvent(
+            event.combatId(),
+            sequence,
+            event.tick(),
+            event.sourceId(),
+            event.targetId(),
+            event.type(),
+            event.occurredAt(),
+            event.payload()
         );
     }
 }

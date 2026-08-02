@@ -1,4 +1,4 @@
-import type { BattleFrame, Vector3 } from "../../types";
+import type { BattleFrame, CombatVisualEvent, Vector3 } from "../../types";
 import {
   SceneGraph,
   type EngagementSceneNode,
@@ -6,8 +6,9 @@ import {
 } from "../scene/SceneGraph";
 
 const ZERO: Vector3 = { x: 0, y: 0, z: 0 };
-const FIRE_CYCLE_TICKS = 20;
-const FIRE_WINDOW_TICKS = 5;
+
+const eventKey = (event: CombatVisualEvent, index: number) =>
+  `${event.type}:${event.attributes.sequence ?? index}`;
 
 export class BattleSceneAdapter {
   public adapt(frame: BattleFrame): SceneGraph {
@@ -40,7 +41,6 @@ export class BattleSceneAdapter {
       const target = ships.get(ship.selectedTargetId);
       if (!target) continue;
 
-      const cycleTick = frame.tick % FIRE_CYCLE_TICKS;
       const engagement: EngagementSceneNode = {
         id: `engagement:${ship.id}:${target.id}`,
         type: "ENGAGEMENT",
@@ -51,11 +51,54 @@ export class BattleSceneAdapter {
         sourcePosition: ship.position,
         targetPosition: target.position,
         side: ship.side,
-        pulsePhase: cycleTick / FIRE_CYCLE_TICKS,
-        firing: cycleTick < FIRE_WINDOW_TICKS,
+        pulsePhase: 1,
+        firing: false,
+        impactType: "NONE",
       };
       scene.upsert(engagement);
     }
+
+    (frame.events ?? []).forEach((event, index) => {
+      if (event.type !== "BEAM_FIRED" || !event.sourceId || !event.targetId) {
+        return;
+      }
+      const source = ships.get(event.sourceId);
+      const target = ships.get(event.targetId);
+      if (!source || !target) return;
+
+      const impact = (frame.events ?? []).find(
+        (candidate) =>
+          candidate.sourceId === event.sourceId
+          && candidate.targetId === event.targetId
+          && candidate.tick === event.tick
+          && (candidate.type === "SHIELD_IMPACT"
+            || candidate.type === "HULL_DAMAGE"
+            || candidate.type === "SHIP_DESTROYED"),
+      );
+
+      const beam: EngagementSceneNode = {
+        id: `beam:${eventKey(event, index)}`,
+        type: "ENGAGEMENT",
+        visible: true,
+        worldPosition: ZERO,
+        sourceShipId: source.id,
+        targetShipId: target.id,
+        sourcePosition: source.position,
+        targetPosition: target.position,
+        side: source.side,
+        pulsePhase: 0,
+        firing: true,
+        impactType:
+          impact?.type === "SHIP_DESTROYED"
+            ? "DESTROYED"
+            : impact?.type === "HULL_DAMAGE"
+              ? "HULL"
+              : impact?.type === "SHIELD_IMPACT"
+                ? "SHIELD"
+                : "MISS",
+      };
+      scene.upsert(beam);;
+    });
 
     return scene;
   }

@@ -22,11 +22,21 @@ export type ShipTelemetry = Readonly<{
   confidence?: number;
 }>;
 
+export type CombatVisualEvent = Readonly<{
+  tick: number;
+  type: string;
+  message: string;
+  sourceId?: string;
+  targetId?: string;
+  attributes: Readonly<Record<string, string>>;
+}>;
+
 export type BattleFrame = Readonly<{
   battleId: string;
   tick: number;
   simulationTimeSeconds: number;
   ships: readonly ShipTelemetry[];
+  events?: readonly CombatVisualEvent[];
 }>;
 
 export type ConnectionState =
@@ -83,12 +93,19 @@ export type BattleShipViewV1 = Readonly<{
   renderFlags: readonly string[];
 }>;
 
+export type BattleEventViewV1 = Readonly<{
+  tick: number;
+  type: string;
+  message: string;
+  attributes: Readonly<Record<string, string>>;
+}>;
+
 export type BattleFrameV1 = Readonly<{
   metadata: BattleFrameMetadataV1;
   capabilities: Readonly<{ enabled: readonly string[] }>;
   ships: readonly BattleShipViewV1[];
   formations: readonly unknown[];
   movement: readonly unknown[];
-  events: readonly unknown[];
+  events: readonly BattleEventViewV1[];
   debug: Readonly<Record<string, string>>;
 }>;
