@@ -5,6 +5,11 @@ import com.beyondsignal.game.combat.command.SelectCombatTargetCommand;
 import com.beyondsignal.game.combat.engine.CombatEncounter;
 import com.beyondsignal.game.combat.engine.CombatParticipant;
 import com.beyondsignal.game.combat.engine.CombatSimulationEngine;
+import com.beyondsignal.game.combat.fleet.FleetDoctrine;
+import com.beyondsignal.game.combat.fleet.FleetOrder;
+import com.beyondsignal.game.combat.fleet.FleetOrderType;
+import com.beyondsignal.game.combat.fleet.FleetState;
+import com.beyondsignal.game.combat.fleet.SquadronState;
 import com.beyondsignal.game.combat.model.CombatId;
 import com.beyondsignal.game.combat.model.CombatSide;
 import com.beyondsignal.game.combat.shield.ShieldModel;
@@ -16,6 +21,7 @@ import com.beyondsignal.game.combat.weapon.WeaponType;
 import io.vertx.core.Vertx;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public final class DeveloperBattleRuntime implements AutoCloseable {
@@ -91,6 +97,16 @@ public final class DeveloperBattleRuntime implements AutoCloseable {
         encounter.addParticipant(allianceEscortTwo);
         encounter.addParticipant(hostileCommand);
         encounter.addParticipant(hostileRaider);
+
+        registerDeveloperFleets(
+            encounter,
+            allianceCommand,
+            allianceEscortOne,
+            allianceEscortTwo,
+            hostileCommand,
+            hostileRaider
+        );
+
         encounter.start();
 
         selectTarget(allianceCommand, hostileCommand);
@@ -98,6 +114,82 @@ public final class DeveloperBattleRuntime implements AutoCloseable {
         selectTarget(allianceEscortTwo, hostileCommand);
         selectTarget(hostileCommand, allianceCommand);
         selectTarget(hostileRaider, allianceEscortOne);
+    }
+
+    private static void registerDeveloperFleets(
+        CombatEncounter encounter,
+        CombatParticipant allianceCommand,
+        CombatParticipant allianceEscortOne,
+        CombatParticipant allianceEscortTwo,
+        CombatParticipant hostileCommand,
+        CombatParticipant hostileRaider
+    ) {
+        FleetOrder allianceOrder = new FleetOrder(
+            stableId("alliance-fleet-order"),
+            FleetOrderType.DEFEND,
+            1,
+            allianceCommand.participantId(),
+            Map.of("objective", "hold-command-line")
+        );
+        SquadronState allianceSquadron = new SquadronState(
+            stableId("alliance-alpha-squadron"),
+            "Alpha Squadron",
+            allianceCommand.participantId(),
+            List.of(
+                allianceCommand.participantId(),
+                allianceEscortOne.participantId(),
+                allianceEscortTwo.participantId()
+            ),
+            "WEDGE",
+            allianceOrder,
+            hostileCommand.participantId(),
+            1.0,
+            "READY"
+        );
+        encounter.addFleet(new FleetState(
+            stableId("alliance-task-force"),
+            "Alliance Task Force",
+            "Admiral Hayes",
+            CombatSide.FRIENDLY,
+            FleetDoctrine.DEFENSIVE,
+            List.of(allianceSquadron),
+            List.of(allianceOrder)
+        ));
+
+        FleetOrder hostileOrder = new FleetOrder(
+            stableId("hostile-fleet-order"),
+            FleetOrderType.ATTACK,
+            1,
+            allianceCommand.participantId(),
+            Map.of("objective", "destroy-command-ship")
+        );
+        SquadronState hostileSquadron = new SquadronState(
+            stableId("hostile-assault-squadron"),
+            "Assault Squadron",
+            hostileCommand.participantId(),
+            List.of(
+                hostileCommand.participantId(),
+                hostileRaider.participantId()
+            ),
+            "LINE",
+            hostileOrder,
+            allianceCommand.participantId(),
+            0.9,
+            "READY"
+        );
+        encounter.addFleet(new FleetState(
+            stableId("hostile-strike-force"),
+            "Hostile Strike Force",
+            "War Leader Kor",
+            CombatSide.HOSTILE,
+            FleetDoctrine.AGGRESSIVE,
+            List.of(hostileSquadron),
+            List.of(hostileOrder)
+        ));
+    }
+
+    private static UUID stableId(String value) {
+        return UUID.nameUUIDFromBytes(value.getBytes());
     }
 
     public void start(long periodMillis) {
