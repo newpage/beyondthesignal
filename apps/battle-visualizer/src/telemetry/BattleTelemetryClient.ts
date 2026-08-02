@@ -1,4 +1,5 @@
-import type { BattleFrame } from "../types";
+import type { BattleFrame, BattleFrameV1 } from "../types";
+import { adaptBattleFrame } from "./battleFrameAdapter";
 
 export type FrameHandler = (frame: BattleFrame) => void;
 export type StatusHandler = (
@@ -57,8 +58,8 @@ export class BattleTelemetryClient {
 
     socket.onmessage = (event) => {
       try {
-        const frame = JSON.parse(String(event.data)) as BattleFrame;
-        this.onFrame(frame);
+        const frame = JSON.parse(String(event.data)) as BattleFrameV1;
+        this.onFrame(adaptBattleFrame(frame));
       } catch (error) {
         console.error("Invalid battle telemetry frame", error);
       }

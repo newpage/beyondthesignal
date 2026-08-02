@@ -23,7 +23,8 @@ export const App = () => {
     const configuredUrl = import.meta.env
       .VITE_BATTLE_TELEMETRY_WS_URL as string | undefined;
 
-    if (!configuredUrl) {
+    const useDemo = import.meta.env.VITE_USE_DEMO_TELEMETRY === "true";
+    if (useDemo) {
       const demo = new DemoTelemetrySource(store);
       demo.start();
       return () => demo.stop();

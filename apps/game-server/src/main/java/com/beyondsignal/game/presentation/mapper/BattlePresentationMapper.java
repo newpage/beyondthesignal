@@ -11,8 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 public final class BattlePresentationMapper {
-    private static final PresentationVector ZERO_VECTOR =
-        new PresentationVector(0.0, 0.0, 0.0);
+    private static final double MOTION_STEP = 0.12;
 
     public BattleFrameV1 map(PresentationContext context) {
         return new BattleFrameV1(
@@ -26,11 +25,7 @@ public final class BattlePresentationMapper {
                 ""
             ),
             context.configuration().capabilities(),
-            context.snapshot().combatants().stream()
-                .sorted((left, right) ->
-                    left.participantId().compareTo(right.participantId()))
-                .map(this::ship)
-                .toList(),
+            mapShips(context),
             java.util.List.of(),
             java.util.List.of(),
             java.util.List.of(),
@@ -38,15 +33,46 @@ public final class BattlePresentationMapper {
         );
     }
 
-    private BattleShipView ship(CombatantSnapshot combatant) {
+    private java.util.List<BattleShipView> mapShips(
+        PresentationContext context
+    ) {
+        var sorted = context.snapshot().combatants().stream()
+            .sorted((left, right) ->
+                left.participantId().compareTo(right.participantId()))
+            .toList();
+        java.util.List<BattleShipView> ships = new java.util.ArrayList<>();
+        for (int index = 0; index < sorted.size(); index++) {
+            ships.add(ship(sorted.get(index), index, context.snapshot().tick()));
+        }
+        return java.util.List.copyOf(ships);
+    }
+
+    private BattleShipView ship(
+        CombatantSnapshot combatant,
+        int index,
+        long tick
+    ) {
+        PresentationVector position = tacticalPosition(combatant, index, tick);
+        PresentationVector nextPosition = tacticalPosition(
+            combatant,
+            index,
+            tick + 1
+        );
+        PresentationVector velocity = new PresentationVector(
+            nextPosition.x() - position.x(),
+            nextPosition.y() - position.y(),
+            nextPosition.z() - position.z()
+        );
+        double heading = Math.atan2(velocity.y(), velocity.x());
+
         return new BattleShipView(
             combatant.participantId(),
             "Ship " + shortId(combatant),
             "UNKNOWN",
             combatant.side().name(),
-            ZERO_VECTOR,
-            ZERO_VECTOR,
-            0.0,
+            position,
+            velocity,
+            heading,
             combatant.selectedTargetId(),
             combatant.hullPercentage(),
             combatant.shields().percentage(),
@@ -55,6 +81,25 @@ public final class BattlePresentationMapper {
             0,
             renderFlags(combatant)
         );
+    }
+
+    private static PresentationVector tacticalPosition(
+        CombatantSnapshot combatant,
+        int index,
+        long tick
+    ) {
+        boolean friendly = combatant.side().name().equals("FRIENDLY");
+        int lane = index % 3;
+        double direction = friendly ? 1.0 : -1.0;
+        double phase = tick * MOTION_STEP + index * 0.9;
+        double centerX = friendly ? -260.0 : 260.0;
+        double radiusX = 95.0 + lane * 18.0;
+        double radiusY = 70.0 + lane * 22.0;
+
+        double x = centerX + Math.cos(phase) * radiusX * direction;
+        double y = (lane - 1) * 105.0 + Math.sin(phase) * radiusY;
+
+        return new PresentationVector(x, y, 0.0);
     }
 
     private Map<String, String> debug(PresentationContext context) {

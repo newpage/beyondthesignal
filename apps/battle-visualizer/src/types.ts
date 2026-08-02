@@ -36,3 +36,40 @@ export type PlaybackState = Readonly<{
   playing: boolean;
   speed: number;
 }>;
+
+export type BattleFrameMetadataV1 = Readonly<{
+  battleId: string;
+  tick: number;
+  simulationTimeSeconds: number;
+  seed: number;
+  frameVersion: "1.0";
+  generatedAt: string;
+  checksum: string;
+}>;
+
+export type BattleShipViewV1 = Readonly<{
+  id: string;
+  name: string;
+  shipClass: string;
+  faction: string;
+  position: Vector3;
+  velocity: Vector3;
+  headingRadians: number;
+  targetId: string | null;
+  hullPercent: number;
+  shieldPercent: number;
+  maneuver: string;
+  executionState: string;
+  confidence: number;
+  renderFlags: readonly string[];
+}>;
+
+export type BattleFrameV1 = Readonly<{
+  metadata: BattleFrameMetadataV1;
+  capabilities: Readonly<{ enabled: readonly string[] }>;
+  ships: readonly BattleShipViewV1[];
+  formations: readonly unknown[];
+  movement: readonly unknown[];
+  events: readonly unknown[];
+  debug: Readonly<Record<string, string>>;
+}>;

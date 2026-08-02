@@ -1,6 +1,21 @@
 package com.beyondsignal.game;
 
 import com.beyondsignal.game.api.GameSessionRoutes;
+import com.beyondsignal.game.combat.ai.snapshot.CombatSnapshotFactory;
+import com.beyondsignal.game.combat.engine.CombatSimulationEngine;
+import com.beyondsignal.game.presentation.buffer.BattleFrameBuffer;
+import com.beyondsignal.game.presentation.checksum.BattleFrameChecksumService;
+import com.beyondsignal.game.presentation.context.PresentationConfiguration;
+import com.beyondsignal.game.presentation.context.PresentationDebugOptions;
+import com.beyondsignal.game.presentation.events.PresentationEventBus;
+import com.beyondsignal.game.presentation.integration.CombatPresentationCoordinator;
+import com.beyondsignal.game.presentation.mapper.BattlePresentationMapper;
+import com.beyondsignal.game.presentation.pipeline.PresentationPipeline;
+import com.beyondsignal.game.presentation.recorder.InMemoryFrameRecorder;
+import com.beyondsignal.game.presentation.runtime.DeveloperBattleRuntime;
+import com.beyondsignal.game.presentation.service.BattlePresentationService;
+import com.beyondsignal.game.presentation.websocket.BattleTelemetryHub;
+import com.beyondsignal.game.presentation.websocket.BattleTelemetryWebSocketGateway;
 import com.beyondsignal.game.debug.BridgeDebugRoutes;
 import com.beyondsignal.game.persistence.jooq.JooqGameSessionRepository;
 import com.beyondsignal.game.service.GameSessionService;
@@ -45,6 +60,7 @@ public final class PlatformVerticle extends AbstractVerticle {
     private HttpServer httpServer;
     private DSLContext dsl;
     private SimulationLoop simulationLoop;
+    private DeveloperBattleRuntime developerBattleRuntime;
 
     public PlatformVerticle(Config config) {
         this.config = config;
@@ -76,16 +92,53 @@ public final class PlatformVerticle extends AbstractVerticle {
         new GameSessionRoutes(gameSessionService).mount(router);
         new BridgeDebugRoutes(gameSessionService, simulationRuntime, eventHub).mount(router);
 
-        SessionWebSocketGateway webSocketGateway =
+        SessionWebSocketGateway sessionWebSocketGateway =
             new SessionWebSocketGateway(gameSessionService, eventHub, simulationRuntime, simulationRuntime);
+
+        BattleTelemetryHub telemetryHub = new BattleTelemetryHub();
+        BattleFrameBuffer frameBuffer = new BattleFrameBuffer(2_000);
+        PresentationPipeline presentationPipeline = new PresentationPipeline(
+            new BattlePresentationMapper(),
+            new BattlePresentationService(
+                new BattleFrameChecksumService(),
+                java.util.List.of(new InMemoryFrameRecorder(2_000))
+            ),
+            frameBuffer,
+            telemetryHub,
+            new PresentationEventBus()
+        );
+        CombatPresentationCoordinator presentationCoordinator =
+            new CombatPresentationCoordinator(
+                new CombatSnapshotFactory(),
+                presentationPipeline,
+                PresentationConfiguration.defaults(),
+                PresentationDebugOptions.development()
+            );
+        developerBattleRuntime = new DeveloperBattleRuntime(
+            vertx,
+            new CombatSimulationEngine(
+                new com.beyondsignal.game.combat.engine.CombatTickProcessor(),
+                presentationCoordinator
+            ),
+            42L
+        );
+        BattleTelemetryWebSocketGateway telemetryGateway =
+            new BattleTelemetryWebSocketGateway(telemetryHub);
 
         httpServer = vertx.createHttpServer()
             .requestHandler(router)
-            .webSocketHandler(webSocketGateway);
+            .webSocketHandler(socket -> {
+                if (BattleTelemetryWebSocketGateway.PATH.equals(socket.path())) {
+                    telemetryGateway.handle(socket);
+                } else {
+                    sessionWebSocketGateway.handle(socket);
+                }
+            });
 
         httpServer.listen(config.port())
             .onSuccess(server -> {
                 simulationLoop.start();
+                developerBattleRuntime.start(50L);
                 System.out.println("HTTP and WebSocket server listening on " + server.actualPort());
                 startPromise.complete();
             })
@@ -200,6 +253,9 @@ public final class PlatformVerticle extends AbstractVerticle {
             : httpServer.close();
 
         serverClose.onComplete(ignored -> {
+            if (developerBattleRuntime != null) {
+                developerBattleRuntime.close();
+            }
             if (simulationLoop != null) {
                 simulationLoop.close();
             }
