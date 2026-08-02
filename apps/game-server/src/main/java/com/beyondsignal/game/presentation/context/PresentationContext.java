@@ -3,6 +3,7 @@ package com.beyondsignal.game.presentation.context;
 import com.beyondsignal.game.combat.ai.snapshot.CombatAiSnapshot;
 import com.beyondsignal.game.combat.event.CombatEvent;
 import com.beyondsignal.game.combat.projectile.ProjectileState;
+import com.beyondsignal.game.combat.wreck.WreckState;
 import java.util.List;
 import java.time.Instant;
 import java.util.Objects;
@@ -15,7 +16,8 @@ public record PresentationContext(
     PresentationConfiguration configuration,
     PresentationDebugOptions debugOptions,
     List<CombatEvent> combatEvents,
-    List<ProjectileState> projectiles
+    List<ProjectileState> projectiles,
+    List<WreckState> wrecks
 ) {
     public PresentationContext {
         snapshot = Objects.requireNonNull(snapshot, "snapshot");
@@ -30,6 +32,9 @@ public record PresentationContext(
         );
         projectiles = List.copyOf(
             Objects.requireNonNull(projectiles, "projectiles")
+        );
+        wrecks = List.copyOf(
+            Objects.requireNonNull(wrecks, "wrecks")
         );
     }
 
@@ -48,6 +53,7 @@ public record PresentationContext(
             generatedAt,
             configuration,
             debugOptions,
+            List.of(),
             List.of(),
             List.of()
         );
@@ -70,9 +76,33 @@ public record PresentationContext(
             configuration,
             debugOptions,
             combatEvents,
+            List.of(),
             List.of()
         );
     }
+
+public PresentationContext(
+    CombatAiSnapshot snapshot,
+    long seed,
+    long frameSequence,
+    Instant generatedAt,
+    PresentationConfiguration configuration,
+    PresentationDebugOptions debugOptions,
+    List<CombatEvent> combatEvents,
+    List<ProjectileState> projectiles
+) {
+    this(
+        snapshot,
+        seed,
+        frameSequence,
+        generatedAt,
+        configuration,
+        debugOptions,
+        combatEvents,
+        projectiles,
+        List.of()
+    );
+}
 
     public double simulationTimeSeconds() {
         return snapshot.tick() * configuration.secondsPerTick();

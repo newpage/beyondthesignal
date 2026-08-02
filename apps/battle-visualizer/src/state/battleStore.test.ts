@@ -71,7 +71,8 @@ describe("BattleStore time machine", () => {
     };
     const store = new BattleStore(frame(1, { ships: [ship] }));
     store.setFrame(frame(2, {
-      projectiles: [],
+      wrecks: [],
+    projectiles: [],
       events: [],
       ships: [{ ...ship, selectedTargetId: "enemy-1" }],
     }));

@@ -1,6 +1,6 @@
 import type { FleetSide, Vector3 } from "../../types";
 
-export type SceneNodeType = "SHIP" | "ENGAGEMENT" | "PROJECTILE";
+export type SceneNodeType = "SHIP" | "ENGAGEMENT" | "PROJECTILE" | "WRECK";
 
 export type SceneNode = Readonly<{
   id: string;
@@ -37,7 +37,7 @@ export type EngagementSceneNode = SceneNode & Readonly<{
 }>;
 
 export type ProjectileSceneNode = SceneNode & Readonly<{
-  type: "PROJECTILE";
+  type: "PROJECTILE" | "WRECK";
   sourceShipId: string;
   targetShipId: string;
   weaponId: string;
@@ -45,6 +45,14 @@ export type ProjectileSceneNode = SceneNode & Readonly<{
   sourcePosition: Vector3;
   targetPosition: Vector3;
   side: FleetSide;
+}>;
+
+export type WreckSceneNode = SceneNode & Readonly<{
+  type: "WRECK";
+  formerShipId: string;
+  faction: string;
+  destroyedTick: number;
+  cause: string;
 }>;
 
 export class SceneGraph {

@@ -6,6 +6,7 @@ import com.beyondsignal.game.combat.log.CombatLog;
 import com.beyondsignal.game.combat.model.CombatId;
 import com.beyondsignal.game.combat.model.CombatSide;
 import com.beyondsignal.game.combat.projectile.ProjectileState;
+import com.beyondsignal.game.combat.wreck.WreckState;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -24,6 +25,7 @@ public final class CombatEncounter {
     private final Map<UUID, CombatParticipant> participants = new LinkedHashMap<>();
     private final Queue<CombatCommand> commandQueue = new ArrayDeque<>();
     private final Map<UUID, ProjectileState> projectiles = new LinkedHashMap<>();
+    private final Map<UUID, WreckState> wrecks = new LinkedHashMap<>();
     private final CombatLog combatLog = new CombatLog();
 
     private CombatEncounterStatus status = CombatEncounterStatus.INITIALIZING;
@@ -102,6 +104,15 @@ public final class CombatEncounter {
     public synchronized void removeProjectile(UUID projectileId) {
         projectiles.remove(projectileId);
     }
+
+public synchronized void addWreck(WreckState wreck) {
+    Objects.requireNonNull(wreck, "wreck");
+    wrecks.putIfAbsent(wreck.wreckId(), wreck);
+}
+
+public synchronized List<WreckState> wrecks() {
+    return List.copyOf(wrecks.values());
+}
 
     public synchronized void submit(CombatCommand command) {
         Objects.requireNonNull(command, "command");

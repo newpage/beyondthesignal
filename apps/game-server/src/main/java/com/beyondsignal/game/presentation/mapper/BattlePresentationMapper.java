@@ -8,6 +8,7 @@ import com.beyondsignal.game.presentation.frame.BattleFrameMetadata;
 import com.beyondsignal.game.presentation.frame.BattleFrameV1;
 import com.beyondsignal.game.presentation.frame.BattleShipView;
 import com.beyondsignal.game.presentation.frame.BattleProjectileView;
+import com.beyondsignal.game.presentation.frame.BattleWreckView;
 import com.beyondsignal.game.presentation.frame.PresentationVector;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,6 +33,7 @@ public final class BattlePresentationMapper {
             java.util.List.of(),
             java.util.List.of(),
             mapProjectiles(context),
+            mapWrecks(context),
             mapEvents(context),
             debug(context)
         );
@@ -128,6 +130,23 @@ public final class BattlePresentationMapper {
             ))
             .toList();
     }
+
+private java.util.List<BattleWreckView> mapWrecks(
+    PresentationContext context
+) {
+    return context.wrecks().stream()
+        .sorted(java.util.Comparator.comparing(
+            wreck -> wreck.wreckId().toString()
+        ))
+        .map(wreck -> new BattleWreckView(
+            wreck.wreckId(),
+            wreck.formerParticipantId(),
+            wreck.side().name(),
+            wreck.destroyedTick(),
+            wreck.cause()
+        ))
+        .toList();
+}
 
     private java.util.List<BattleEventView> mapEvents(
         PresentationContext context

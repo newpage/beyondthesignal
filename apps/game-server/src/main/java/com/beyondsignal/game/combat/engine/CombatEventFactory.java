@@ -183,6 +183,22 @@ public CombatEvent projectileCreated(
     );
 }
 
+public CombatEvent projectileIntercepted(
+    CombatEncounter encounter,
+    ProjectileState projectile
+) {
+    return projectileEvent(
+        encounter,
+        projectile,
+        CombatEventType.PROJECTILE_INTERCEPTED,
+        Map.of(
+            "projectileId", projectile.projectileId().toString(),
+            "weaponId", projectile.weaponId(),
+            "reason", "POINT_DEFENSE"
+        )
+    );
+}
+
 public CombatEvent projectileImpact(
     CombatEncounter encounter,
     ProjectileState projectile

@@ -31,7 +31,8 @@ describe("BattleSceneAdapter projectiles", () => {
           shields: 1,
         },
       ],
-      projectiles: [
+      wrecks: [],
+    projectiles: [
         {
           id: "p",
           sourceId: "a",

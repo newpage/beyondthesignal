@@ -40,12 +40,21 @@ export type ProjectileTelemetry = Readonly<{
   progress: number;
 }>;
 
+export type WreckTelemetry = Readonly<{
+  id: string;
+  formerShipId: string;
+  faction: string;
+  destroyedTick: number;
+  cause: string;
+}>;
+
 export type BattleFrame = Readonly<{
   battleId: string;
   tick: number;
   simulationTimeSeconds: number;
   ships: readonly ShipTelemetry[];
   projectiles?: readonly ProjectileTelemetry[];
+  wrecks?: readonly WreckTelemetry[];
   events?: readonly CombatVisualEvent[];
 }>;
 
@@ -119,6 +128,14 @@ export type BattleProjectileViewV1 = Readonly<{
   progress: number;
 }>;
 
+export type BattleWreckViewV1 = Readonly<{
+  id: string;
+  formerShipId: string;
+  faction: string;
+  destroyedTick: number;
+  cause: string;
+}>;
+
 export type BattleFrameV1 = Readonly<{
   metadata: BattleFrameMetadataV1;
   capabilities: Readonly<{ enabled: readonly string[] }>;
@@ -126,6 +143,7 @@ export type BattleFrameV1 = Readonly<{
   formations: readonly unknown[];
   movement: readonly unknown[];
   projectiles?: readonly BattleProjectileViewV1[];
+  wrecks?: readonly BattleWreckViewV1[];
   events: readonly BattleEventViewV1[];
   debug: Readonly<Record<string, string>>;
 }>;

@@ -11,6 +11,7 @@ public record BattleFrameV1(
     List<BattleFormationView> formations,
     List<BattleMovementView> movement,
     List<BattleProjectileView> projectiles,
+    List<BattleWreckView> wrecks,
     List<BattleEventView> events,
     Map<String, String> debug
 ) {
@@ -23,6 +24,7 @@ public record BattleFrameV1(
         formations = List.copyOf(formations);
         movement = List.copyOf(movement);
         projectiles = List.copyOf(projectiles);
+        wrecks = List.copyOf(wrecks);
         events = List.copyOf(events);
         debug = Map.copyOf(debug);
         if (!VERSION.equals(metadata.frameVersion())) {
@@ -46,10 +48,34 @@ public record BattleFrameV1(
             formations,
             movement,
             List.of(),
+            List.of(),
             events,
             debug
         );
     }
+
+public BattleFrameV1(
+    BattleFrameMetadata metadata,
+    BattleCapabilities capabilities,
+    List<BattleShipView> ships,
+    List<BattleFormationView> formations,
+    List<BattleMovementView> movement,
+    List<BattleProjectileView> projectiles,
+    List<BattleEventView> events,
+    Map<String, String> debug
+) {
+    this(
+        metadata,
+        capabilities,
+        ships,
+        formations,
+        movement,
+        projectiles,
+        List.of(),
+        events,
+        debug
+    );
+}
 
     public BattleFrameV1 withMetadata(BattleFrameMetadata value) {
         return new BattleFrameV1(
@@ -59,6 +85,7 @@ public record BattleFrameV1(
             formations,
             movement,
             projectiles,
+            wrecks,
             events,
             debug
         );

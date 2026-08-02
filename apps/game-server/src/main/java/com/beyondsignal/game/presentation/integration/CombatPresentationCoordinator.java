@@ -70,7 +70,8 @@ public final class CombatPresentationCoordinator
             configuration,
             debugOptions,
             events,
-            encounter.projectiles()
+            encounter.projectiles(),
+            encounter.wrecks()
         ));
     }
 

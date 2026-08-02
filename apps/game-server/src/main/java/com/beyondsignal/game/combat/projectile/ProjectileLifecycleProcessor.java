@@ -7,6 +7,9 @@ import com.beyondsignal.game.combat.event.CombatEventType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+import com.beyondsignal.game.combat.wreck.WreckState;
 
 public final class ProjectileLifecycleProcessor {
     private final ProjectileInterceptor interceptor;
@@ -15,7 +18,7 @@ public final class ProjectileLifecycleProcessor {
 
     public ProjectileLifecycleProcessor() {
         this(
-            ProjectileInterceptor.none(),
+            new PointDefenseProjectileInterceptor(),
             new ProjectileDamageResolver(),
             new CombatEventFactory()
         );
@@ -52,10 +55,9 @@ public final class ProjectileLifecycleProcessor {
                 encounter.replaceProjectile(
                     projectile.withStatus(ProjectileStatus.INTERCEPTED)
                 );
-                events.add(eventFactory.projectileExpired(
+                events.add(eventFactory.projectileIntercepted(
                     encounter,
-                    projectile,
-                    "INTERCEPTED"
+                    projectile
                 ));
                 continue;
             }
@@ -113,6 +115,21 @@ public final class ProjectileLifecycleProcessor {
                 events.add(eventFactory.projectileDestroyedShip(
                     encounter,
                     projectile
+                ));
+                var destroyed = target.get();
+                UUID wreckId = UUID.nameUUIDFromBytes(
+                    (
+                        encounter.combatId().value()
+                            + ":wreck:"
+                            + destroyed.participantId()
+                    ).getBytes(StandardCharsets.UTF_8)
+                );
+                encounter.addWreck(new WreckState(
+                    wreckId,
+                    destroyed.participantId(),
+                    destroyed.side(),
+                    tick,
+                    projectile.weaponId()
                 ));
             }
         }
