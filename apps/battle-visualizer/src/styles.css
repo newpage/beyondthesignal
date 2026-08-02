@@ -197,3 +197,146 @@ button {
     display: none;
   }
 }
+
+.tactical-hud {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 12;
+  width: min(760px, calc(100% - 36px));
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(112, 178, 255, 0.22);
+  border-radius: 10px;
+  background: rgba(3, 10, 25, 0.84);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(15px);
+}
+
+.hud-section {
+  display: grid;
+  gap: 2px;
+  min-width: 120px;
+}
+
+.hud-label {
+  color: #6ea9ff;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.tactical-hud dl {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(58px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.tactical-hud dl div {
+  display: grid;
+  gap: 2px;
+}
+
+.tactical-hud dt {
+  color: #7187a7;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+}
+
+.tactical-hud dd {
+  margin: 0;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.76rem;
+}
+
+.tactical-hud dd[data-state="CONNECTED"] { color: #7af4b7; }
+.tactical-hud dd[data-state="DEMO"] { color: #ffd277; }
+
+.hud-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.hud-actions button,
+.inspector-close {
+  border: 1px solid rgba(126, 172, 247, 0.28);
+  border-radius: 6px;
+  background: rgba(50, 90, 145, 0.22);
+  color: #dcecff;
+  cursor: pointer;
+}
+
+.hud-actions button {
+  padding: 7px 9px;
+  font-size: 0.68rem;
+}
+
+.hud-actions button:hover { border-color: rgba(102, 217, 255, 0.75); }
+.tactical-hud small { grid-column: 1 / -1; color: #8296b4; }
+
+.ship-inspector {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 14;
+  width: 280px;
+  padding: 18px;
+  border: 1px solid rgba(255, 220, 110, 0.32);
+  border-radius: 12px;
+  background: rgba(4, 11, 27, 0.92);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(18px);
+}
+
+.ship-inspector h2 {
+  margin: 5px 0 8px;
+  font-size: 1.15rem;
+}
+
+.inspector-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  font-size: 1.15rem;
+}
+
+.side-badge {
+  display: inline-flex;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.side-badge.alliance { color: #66d9ff; background: rgba(102, 217, 255, 0.12); }
+.side-badge.hostile { color: #ff5d78; background: rgba(255, 93, 120, 0.12); }
+
+.ship-inspector dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.ship-inspector dl div { display: grid; gap: 3px; }
+.ship-inspector dt { color: #7890b0; font-size: 0.64rem; text-transform: uppercase; }
+.ship-inspector dd { margin: 0; font-family: "SFMono-Regular", Consolas, monospace; }
+
+.status-bars { display: grid; gap: 10px; }
+.status-bars label { display: grid; grid-template-columns: 48px 1fr; align-items: center; gap: 8px; color: #9cadc5; font-size: 0.7rem; }
+.status-bars progress { width: 100%; accent-color: #66d9ff; }
+.status-bars label:first-child progress { accent-color: #73ef9c; }
+
+@media (max-width: 1050px) {
+  .tactical-hud { grid-template-columns: 1fr auto; }
+  .tactical-hud dl { display: none; }
+  .ship-inspector { top: 92px; }
+}

@@ -23,6 +23,46 @@ export class Camera2D {
     };
   }
 
+  public setPosition(position: Point2D): CameraState {
+    this.state = {
+      ...this.state,
+      position: { ...position },
+    };
+    return this.snapshot();
+  }
+
+  public reset(): CameraState {
+    this.state = { position: { x: 0, y: 0 }, zoom: 1 };
+    return this.snapshot();
+  }
+
+  public fit(
+    points: readonly Point2D[],
+    viewport: Point2D,
+    padding = 120,
+  ): CameraState {
+    if (points.length === 0) return this.reset();
+    const xs = points.map((point) => point.x);
+    const ys = points.map((point) => point.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const width = Math.max(1, maxX - minX);
+    const height = Math.max(1, maxY - minY);
+    const availableWidth = Math.max(1, viewport.x - padding * 2);
+    const availableHeight = Math.max(1, viewport.y - padding * 2);
+    const zoom = Math.max(0.25, Math.min(4, Math.min(
+      availableWidth / width,
+      availableHeight / height,
+    )));
+    this.state = {
+      position: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+      zoom,
+    };
+    return this.snapshot();
+  }
+
   public panBy(delta: Point2D): CameraState {
     this.state = {
       ...this.state,

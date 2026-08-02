@@ -1,0 +1,50 @@
+export type TacticalTheme = Readonly<{
+  background: number;
+  friendly: number;
+  hostile: number;
+  neutral: number;
+  selection: number;
+  hover: number;
+  label: number;
+  labelMuted: number;
+  shieldHigh: number;
+  shieldMedium: number;
+  shieldLow: number;
+  shieldCritical: number;
+  hullHigh: number;
+  hullMedium: number;
+  hullLow: number;
+  hullCritical: number;
+}>;
+
+export const tacticalTheme: TacticalTheme = {
+  background: 0x030713,
+  friendly: 0x66d9ff,
+  hostile: 0xff5d78,
+  neutral: 0xaebbd0,
+  selection: 0xffdf75,
+  hover: 0xffffff,
+  label: 0xeaf4ff,
+  labelMuted: 0x8ba0bd,
+  shieldHigh: 0x62d9ff,
+  shieldMedium: 0x51f0d2,
+  shieldLow: 0xffbd62,
+  shieldCritical: 0xff6478,
+  hullHigh: 0x73ef9c,
+  hullMedium: 0xd4ed66,
+  hullLow: 0xffa94d,
+  hullCritical: 0xff596d,
+};
+
+export const statusColor = (
+  value: number,
+  high: number,
+  medium: number,
+  low: number,
+  critical: number,
+): number => {
+  if (value >= 0.75) return high;
+  if (value >= 0.5) return medium;
+  if (value >= 0.25) return low;
+  return critical;
+};
