@@ -442,3 +442,22 @@ button {
     display: none;
   }
 }
+
+
+.inspector-badges { display: flex; flex-wrap: wrap; gap: 7px; }
+.threat-badge { display: inline-flex; padding: 3px 7px; border-radius: 999px; font-size: 0.58rem; font-weight: 850; letter-spacing: 0.07em; }
+.threat-badge.low { color: #85d7ff; background: rgba(76, 174, 224, 0.12); }
+.threat-badge.elevated { color: #ffe58c; background: rgba(255, 211, 106, 0.13); }
+.threat-badge.high { color: #ffad70; background: rgba(255, 139, 75, 0.14); }
+.threat-badge.critical { color: #ff7188; background: rgba(255, 74, 106, 0.16); box-shadow: 0 0 12px rgba(255, 74, 106, 0.18); }
+.ai-intelligence { display: grid; gap: 10px; margin: 16px 0; padding: 12px; border: 1px solid rgba(112, 178, 255, 0.18); border-radius: 9px; background: rgba(31, 63, 105, 0.12); }
+.ai-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ai-heading strong { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.68rem; }
+.ai-heading strong[data-band="HIGH"] { color: #7af4b7; }
+.ai-heading strong[data-band="MODERATE"] { color: #ffd36a; }
+.ai-heading strong[data-band="LOW"] { color: #ff7188; }
+.decision-card { display: grid; gap: 3px; padding: 9px; border-left: 2px solid #6ea9ff; background: rgba(70, 125, 194, 0.1); }
+.decision-card span { color: #7890b0; font-size: 0.61rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.decision-card b { font-size: 0.78rem; }
+.ai-intelligence ul { display: grid; gap: 5px; margin: 0; padding-left: 17px; color: #a9b8cd; font-size: 0.68rem; }
+.ai-intelligence small { color: #6f829e; font-size: 0.6rem; line-height: 1.4; }

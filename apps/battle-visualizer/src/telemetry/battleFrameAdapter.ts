@@ -44,5 +44,9 @@ export const adaptBattleFrame = (frame: BattleFrameV1): BattleFrame => ({
     hull: ship.hullPercent,
     shields: ship.shieldPercent,
     selectedTargetId: ship.targetId ?? undefined,
+    shipClass: ship.shipClass,
+    maneuver: ship.maneuver,
+    executionState: ship.executionState,
+    confidence: ship.confidence,
   })),
 });

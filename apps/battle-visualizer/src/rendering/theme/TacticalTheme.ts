@@ -19,6 +19,9 @@ export type TacticalTheme = Readonly<{
   beamFriendly: number;
   beamHostile: number;
   shieldImpact: number;
+  intelligenceProjection: number;
+  intelligenceConfidence: number;
+  intelligenceTarget: number;
 }>;
 
 export const tacticalTheme: TacticalTheme = {
@@ -42,6 +45,9 @@ export const tacticalTheme: TacticalTheme = {
   beamFriendly: 0x58dfff,
   beamHostile: 0xff496f,
   shieldImpact: 0x9fe9ff,
+  intelligenceProjection: 0x7de5ff,
+  intelligenceConfidence: 0xffd36a,
+  intelligenceTarget: 0xff7f95,
 };
 
 export const statusColor = (

@@ -18,6 +18,10 @@ export type ShipSceneNode = SceneNode & Readonly<{
   hull: number;
   shields: number;
   selectedTargetId?: string;
+  shipClass?: string;
+  maneuver?: string;
+  executionState?: string;
+  confidence?: number;
 }>;
 
 export type EngagementSceneNode = SceneNode & Readonly<{

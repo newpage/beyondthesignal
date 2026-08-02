@@ -16,6 +16,10 @@ export type ShipTelemetry = Readonly<{
   hull: number;
   shields: number;
   selectedTargetId?: string;
+  shipClass?: string;
+  maneuver?: string;
+  executionState?: string;
+  confidence?: number;
 }>;
 
 export type BattleFrame = Readonly<{

@@ -27,6 +27,10 @@ export class BattleSceneAdapter {
         hull: ship.hull,
         shields: ship.shields,
         selectedTargetId: ship.selectedTargetId,
+        shipClass: ship.shipClass ?? "UNKNOWN",
+        maneuver: ship.maneuver ?? "NONE",
+        executionState: ship.executionState ?? "IDLE",
+        confidence: ship.confidence ?? 0,
       };
       scene.upsert(node);
     }
