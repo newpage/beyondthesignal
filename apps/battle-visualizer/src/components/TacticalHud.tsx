@@ -1,5 +1,6 @@
 import type { BattleFrame, ConnectionState } from "../types";
 import { deriveTacticalStatus } from "./tacticalStatus";
+import { VISUAL_QUALITIES, type VisualQuality } from "../rendering/cinematic/VisualQuality";
 
 type Props = Readonly<{
   frame: BattleFrame;
@@ -12,6 +13,8 @@ type Props = Readonly<{
   onFitBattle: () => void;
   onToggleFollow: () => void;
   onClearMeasurement: () => void;
+  visualQuality: VisualQuality;
+  onVisualQualityChange: (quality: VisualQuality) => void;
 }>;
 
 export const TacticalHud = ({
@@ -25,6 +28,8 @@ export const TacticalHud = ({
   onFitBattle,
   onToggleFollow,
   onClearMeasurement,
+  visualQuality,
+  onVisualQualityChange,
 }: Props) => {
   const status = deriveTacticalStatus(frame);
 
@@ -47,6 +52,19 @@ export const TacticalHud = ({
         <div><dt>Zoom</dt><dd>{Math.round(zoom * 100)}%</dd></div>
         <div><dt>Telemetry</dt><dd data-state={connectionState}>{connectionState}</dd></div>
       </dl>
+      <label className="quality-control">
+        <span>Visual Quality</span>
+        <select
+          value={visualQuality}
+          onChange={(event) =>
+            onVisualQualityChange(event.target.value as VisualQuality)
+          }
+        >
+          {VISUAL_QUALITIES.map((quality) => (
+            <option key={quality} value={quality}>{quality}</option>
+          ))}
+        </select>
+      </label>
       <div className="hud-actions">
         <button type="button" onClick={onResetCamera}>Reset</button>
         <button type="button" onClick={onFitBattle}>Fit</button>

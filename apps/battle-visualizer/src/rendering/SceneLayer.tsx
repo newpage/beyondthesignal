@@ -13,14 +13,17 @@ import { WeaponEffectLayer } from "./WeaponEffectLayer";
 import { ProjectileLayer } from "./ProjectileLayer";
 import { WreckLayer } from "./WreckLayer";
 import { TargetingReticleLayer } from "./TargetingReticleLayer";
+import { CinematicEffectsLayer } from "./cinematic/CinematicEffectsLayer";
+import type { VisualQuality } from "./cinematic/VisualQuality";
 
 type Props = Readonly<{
   frame: BattleFrame;
   selectedShipId?: string;
   onSelectShip: (shipId: string) => void;
+  visualQuality: VisualQuality;
 }>;
 
-export const SceneLayer = ({ frame, selectedShipId, onSelectShip }: Props) => {
+export const SceneLayer = ({ frame, selectedShipId, onSelectShip, visualQuality }: Props) => {
   const adapter = useMemo(() => new BattleSceneAdapter(), []);
   const scene = useMemo(() => adapter.adapt(frame), [adapter, frame]);
   const ships = scene.byType<ShipSceneNode>("SHIP");
@@ -36,6 +39,7 @@ export const SceneLayer = ({ frame, selectedShipId, onSelectShip }: Props) => {
 
   return (
     <>
+      <CinematicEffectsLayer frame={frame} ships={ships} quality={visualQuality} />
       <AIIntelligenceLayer selectedShip={selectedShip} targetShip={targetShip} />
       <WeaponEffectLayer engagements={engagements} />
       <ProjectileLayer projectiles={projectiles} />
