@@ -9,7 +9,9 @@ type Props = Readonly<{
   simulationTimeSeconds: number;
   connectionState: ConnectionState;
   playback: PlaybackState;
+  queuedFrames: number;
   onPlaybackChange: (playback: PlaybackState) => void;
+  onStepFrame: () => void;
 }>;
 
 export const SimulationClock = ({
@@ -18,7 +20,9 @@ export const SimulationClock = ({
   simulationTimeSeconds,
   connectionState,
   playback,
+  queuedFrames,
   onPlaybackChange,
+  onStepFrame,
 }: Props) => (
   <header className="simulation-clock">
     <div>
@@ -52,6 +56,15 @@ export const SimulationClock = ({
         }
       >
         {playback.playing ? "Pause" : "Play"}
+      </button>
+
+      <button
+        type="button"
+        disabled={playback.playing || queuedFrames === 0}
+        onClick={onStepFrame}
+        title="Advance one buffered telemetry frame"
+      >
+        Step{queuedFrames > 0 ? ` (${queuedFrames})` : ""}
       </button>
 
       {[1, 2, 5, 10].map((speed) => (

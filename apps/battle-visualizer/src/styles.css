@@ -340,3 +340,105 @@ button {
   .tactical-hud dl { display: none; }
   .ship-inspector { top: 92px; }
 }
+
+.playback-controls button:disabled,
+.hud-actions button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.hud-actions button.active {
+  border-color: rgba(102, 217, 255, 0.82);
+  background: rgba(40, 145, 203, 0.38);
+}
+
+.tactical-minimap {
+  position: absolute;
+  right: 18px;
+  bottom: 62px;
+  z-index: 13;
+  width: 220px;
+  padding: 8px;
+  border: 1px solid rgba(112, 178, 255, 0.25);
+  border-radius: 11px;
+  background: rgba(3, 10, 25, 0.9);
+  box-shadow: 0 15px 34px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(14px);
+}
+
+.tactical-minimap svg {
+  display: block;
+  width: 100%;
+  cursor: crosshair;
+}
+
+.tactical-minimap > span {
+  display: block;
+  margin-top: 5px;
+  color: #7389a8;
+  font-size: 0.57rem;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-align: center;
+}
+
+.minimap-background {
+  fill: rgba(2, 7, 17, 0.94);
+  stroke: rgba(102, 217, 255, 0.18);
+}
+
+.minimap-axis {
+  stroke: rgba(126, 172, 247, 0.12);
+  stroke-width: 1;
+}
+
+.minimap-ship.alliance {
+  fill: #66d9ff;
+  filter: drop-shadow(0 0 3px #66d9ff);
+}
+
+.minimap-ship.hostile {
+  fill: #ff5d78;
+  filter: drop-shadow(0 0 3px #ff5d78);
+}
+
+.minimap-camera {
+  fill: none;
+  stroke: #ffd36a;
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
+
+.range-measurement {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+}
+
+.range-line {
+  position: absolute;
+  height: 1px;
+  transform-origin: 0 50%;
+  border-top: 1px dashed rgba(255, 211, 106, 0.95);
+  box-shadow: 0 0 7px rgba(255, 211, 106, 0.5);
+}
+
+.range-measurement span {
+  position: absolute;
+  transform: translate(-50%, -140%);
+  padding: 4px 7px;
+  border: 1px solid rgba(255, 211, 106, 0.3);
+  border-radius: 5px;
+  background: rgba(5, 11, 24, 0.9);
+  color: #ffe5a2;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .tactical-minimap {
+    display: none;
+  }
+}

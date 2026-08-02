@@ -9,12 +9,16 @@ type Snapshot = Readonly<{
   frame: BattleFrame;
   connectionState: ConnectionState;
   playback: PlaybackState;
+  queuedFrames: number;
 }>;
 
 type Listener = () => void;
 
+const MAX_BUFFERED_FRAMES = 500;
+
 export class BattleStore {
   private listeners = new Set<Listener>();
+  private frameQueue: BattleFrame[] = [];
   private snapshot: Snapshot;
 
   public constructor(initialFrame: BattleFrame) {
@@ -25,6 +29,7 @@ export class BattleStore {
         playing: true,
         speed: 1,
       },
+      queuedFrames: 0,
     };
   }
 
@@ -36,6 +41,15 @@ export class BattleStore {
   };
 
   public setFrame(frame: BattleFrame): void {
+    if (!this.snapshot.playback.playing) {
+      this.frameQueue.push(frame);
+      if (this.frameQueue.length > MAX_BUFFERED_FRAMES) {
+        this.frameQueue.splice(0, this.frameQueue.length - MAX_BUFFERED_FRAMES);
+      }
+      this.updateQueuedFrames();
+      return;
+    }
+
     this.snapshot = {
       ...this.snapshot,
       frame,
@@ -52,9 +66,46 @@ export class BattleStore {
   }
 
   public setPlayback(playback: PlaybackState): void {
+    const wasPaused = !this.snapshot.playback.playing;
     this.snapshot = {
       ...this.snapshot,
       playback,
+    };
+
+    if (wasPaused && playback.playing && this.frameQueue.length > 0) {
+      const latest = this.frameQueue.at(-1);
+      this.frameQueue = [];
+      this.snapshot = {
+        ...this.snapshot,
+        frame: latest ?? this.snapshot.frame,
+        queuedFrames: 0,
+      };
+    }
+
+    this.emit();
+  }
+
+  public stepFrame(): boolean {
+    if (this.snapshot.playback.playing || this.frameQueue.length === 0) {
+      return false;
+    }
+
+    const next = this.frameQueue.shift();
+    if (!next) return false;
+
+    this.snapshot = {
+      ...this.snapshot,
+      frame: next,
+      queuedFrames: this.frameQueue.length,
+    };
+    this.emit();
+    return true;
+  }
+
+  private updateQueuedFrames(): void {
+    this.snapshot = {
+      ...this.snapshot,
+      queuedFrames: this.frameQueue.length,
     };
     this.emit();
   }

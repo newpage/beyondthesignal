@@ -5,8 +5,12 @@ type Props = Readonly<{
   connectionState: ConnectionState;
   zoom: number;
   selectedShipId?: string;
+  followingSelection: boolean;
+  hasMeasurement: boolean;
   onResetCamera: () => void;
   onFitBattle: () => void;
+  onToggleFollow: () => void;
+  onClearMeasurement: () => void;
 }>;
 
 export const TacticalHud = ({
@@ -14,8 +18,12 @@ export const TacticalHud = ({
   connectionState,
   zoom,
   selectedShipId,
+  followingSelection,
+  hasMeasurement,
   onResetCamera,
   onFitBattle,
+  onToggleFollow,
+  onClearMeasurement,
 }: Props) => {
   const alliance = frame.ships.filter((ship) => ship.side === "ALLIANCE").length;
   const hostile = frame.ships.length - alliance;
@@ -35,10 +43,28 @@ export const TacticalHud = ({
         <div><dt>Telemetry</dt><dd data-state={connectionState}>{connectionState}</dd></div>
       </dl>
       <div className="hud-actions">
-        <button type="button" onClick={onResetCamera}>Reset View</button>
-        <button type="button" onClick={onFitBattle}>Fit Battle</button>
+        <button type="button" onClick={onResetCamera}>Reset</button>
+        <button type="button" onClick={onFitBattle}>Fit</button>
+        <button
+          type="button"
+          disabled={!selectedShipId}
+          className={followingSelection ? "active" : undefined}
+          onClick={onToggleFollow}
+        >
+          Follow
+        </button>
+        <button
+          type="button"
+          disabled={!hasMeasurement}
+          onClick={onClearMeasurement}
+        >
+          Clear Range
+        </button>
       </div>
-      {selectedShipId ? <small>Selected: {selectedShipId.slice(0, 8)}</small> : null}
+      <small>
+        {selectedShipId ? `Selected: ${selectedShipId.slice(0, 8)} · ` : ""}
+        Shift-drag to measure range
+      </small>
     </aside>
   );
 };

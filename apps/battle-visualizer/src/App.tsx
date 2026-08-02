@@ -48,7 +48,9 @@ export const App = () => {
         simulationTimeSeconds={snapshot.frame.simulationTimeSeconds}
         connectionState={snapshot.connectionState}
         playback={snapshot.playback}
+        queuedFrames={snapshot.queuedFrames}
         onPlaybackChange={(playback) => store.setPlayback(playback)}
+        onStepFrame={() => store.stepFrame()}
       />
 
       <section className="battle-stage">
