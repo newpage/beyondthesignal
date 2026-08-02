@@ -2,19 +2,17 @@ import { Application, extend } from "@pixi/react";
 import { Container, Graphics } from "pixi.js";
 import { useMemo } from "react";
 import type { BattleFrame } from "../types";
-import { useCameraController } from "./CameraController";
-import { ShipLayer } from "./ShipLayer";
+import { useCameraController } from "./camera/useCameraController";
+import { SceneLayer } from "./SceneLayer";
 import { Starfield } from "./Starfield";
 
 extend({ Container, Graphics });
 
-type Props = Readonly<{
-  frame: BattleFrame;
-}>;
+type Props = Readonly<{ frame: BattleFrame }>;
 
 export const BattleViewport = ({ frame }: Props) => {
   const resizeTo = useMemo(() => window, []);
-  const { handlers, transform } = useCameraController();
+  const { handlers, state } = useCameraController();
 
   return (
     <div className="camera-input" {...handlers}>
@@ -26,12 +24,12 @@ export const BattleViewport = ({ frame }: Props) => {
         resolution={window.devicePixelRatio}
       >
         <pixiContainer
-          x={window.innerWidth / 2 + transform.x}
-          y={window.innerHeight / 2 + transform.y}
-          scale={transform.scale}
+          x={window.innerWidth / 2 - state.position.x * state.zoom}
+          y={window.innerHeight / 2 - state.position.y * state.zoom}
+          scale={state.zoom}
         >
           <Starfield />
-          <ShipLayer ships={frame.ships} />
+          <SceneLayer frame={frame} />
         </pixiContainer>
       </Application>
     </div>

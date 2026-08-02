@@ -1,18 +1,17 @@
 import { useCallback } from "react";
 import type { Graphics } from "pixi.js";
-import type { ShipTelemetry } from "../types";
+import type { ShipSceneNode } from "./scene/SceneGraph";
 
 type Props = Readonly<{
-  ships: readonly ShipTelemetry[];
+  ships: readonly ShipSceneNode[];
 }>;
 
 const WORLD_SCALE = 0.75;
 
-const ShipGlyph = ({ ship }: { ship: ShipTelemetry }) => {
+const ShipGlyph = ({ ship }: { ship: ShipSceneNode }) => {
   const draw = useCallback(
     (graphics: Graphics) => {
       const color = ship.side === "ALLIANCE" ? 0x66d9ff : 0xff5d78;
-
       graphics.clear();
       graphics
         .poly([
@@ -24,11 +23,7 @@ const ShipGlyph = ({ ship }: { ship: ShipTelemetry }) => {
         .fill({ color, alpha: 0.95 })
         .stroke({ color: 0xffffff, alpha: 0.55, width: 1 });
 
-      const velocityLength = Math.min(
-        80,
-        Math.hypot(ship.velocity.x, ship.velocity.y) * 3,
-      );
-
+      const velocityLength = Math.min(80, Math.hypot(ship.velocity.x, ship.velocity.y) * 3);
       graphics
         .moveTo(0, 0)
         .lineTo(-velocityLength, 0)
@@ -39,9 +34,10 @@ const ShipGlyph = ({ ship }: { ship: ShipTelemetry }) => {
 
   return (
     <pixiContainer
-      x={ship.position.x * WORLD_SCALE}
-      y={ship.position.y * WORLD_SCALE}
+      x={ship.worldPosition.x * WORLD_SCALE}
+      y={ship.worldPosition.y * WORLD_SCALE}
       rotation={ship.headingRadians}
+      visible={ship.visible}
     >
       <pixiGraphics draw={draw} />
     </pixiContainer>
@@ -50,8 +46,6 @@ const ShipGlyph = ({ ship }: { ship: ShipTelemetry }) => {
 
 export const ShipLayer = ({ ships }: Props) => (
   <pixiContainer>
-    {ships.map((ship) => (
-      <ShipGlyph key={ship.id} ship={ship} />
-    ))}
+    {ships.map((ship) => <ShipGlyph key={ship.id} ship={ship} />)}
   </pixiContainer>
 );
