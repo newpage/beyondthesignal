@@ -3,6 +3,7 @@ package com.beyondsignal.game.combat.engine;
 import com.beyondsignal.game.combat.command.CombatCommand;
 import com.beyondsignal.game.combat.event.CombatEvent;
 import com.beyondsignal.game.combat.fleet.ai.FleetCommanderAI;
+import com.beyondsignal.game.combat.fleet.squadron.SquadronCoordinator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -15,12 +16,14 @@ public final class CombatTickProcessor {
     private final CombatCommandProcessor commandProcessor;
     private final ProjectileLifecycleProcessor projectileProcessor;
     private final FleetCommanderAI fleetCommander;
+    private final SquadronCoordinator squadronCoordinator;
 
     public CombatTickProcessor() {
         this(
             new CombatCommandProcessor(),
             new ProjectileLifecycleProcessor(),
-            new FleetCommanderAI()
+            new FleetCommanderAI(),
+            new SquadronCoordinator()
         );
     }
 
@@ -28,7 +31,8 @@ public final class CombatTickProcessor {
         this(
             commandProcessor,
             new ProjectileLifecycleProcessor(),
-            new FleetCommanderAI()
+            new FleetCommanderAI(),
+            new SquadronCoordinator()
         );
     }
 
@@ -39,7 +43,8 @@ public final class CombatTickProcessor {
         this(
             commandProcessor,
             projectileProcessor,
-            new FleetCommanderAI()
+            new FleetCommanderAI(),
+            new SquadronCoordinator()
         );
     }
 
@@ -47,6 +52,20 @@ public final class CombatTickProcessor {
         CombatCommandProcessor commandProcessor,
         ProjectileLifecycleProcessor projectileProcessor,
         FleetCommanderAI fleetCommander
+    ) {
+        this(
+            commandProcessor,
+            projectileProcessor,
+            fleetCommander,
+            new SquadronCoordinator()
+        );
+    }
+
+    public CombatTickProcessor(
+        CombatCommandProcessor commandProcessor,
+        ProjectileLifecycleProcessor projectileProcessor,
+        FleetCommanderAI fleetCommander,
+        SquadronCoordinator squadronCoordinator
     ) {
         this.commandProcessor = Objects.requireNonNull(
             commandProcessor,
@@ -59,6 +78,10 @@ public final class CombatTickProcessor {
         this.fleetCommander = Objects.requireNonNull(
             fleetCommander,
             "fleetCommander"
+        );
+        this.squadronCoordinator = Objects.requireNonNull(
+            squadronCoordinator,
+            "squadronCoordinator"
         );
     }
 
@@ -92,8 +115,17 @@ public final class CombatTickProcessor {
             projectileProcessor.advance(encounter, tick)
         );
 
-        for (var decision : fleetCommander.evaluate(encounter, tick)) {
+        var fleetDecisions = fleetCommander.evaluate(encounter, tick);
+        for (var decision : fleetDecisions) {
             encounter.recordFleetDecision(decision);
+        }
+
+        var coordination = squadronCoordinator.coordinate(
+            encounter,
+            fleetDecisions
+        );
+        for (CombatCommand command : coordination.commands()) {
+            encounter.submit(command);
         }
 
         encounter.evaluateCompletion();
