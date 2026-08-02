@@ -2,6 +2,7 @@ package com.beyondsignal.game.combat.engine;
 
 import com.beyondsignal.game.combat.command.CombatCommand;
 import com.beyondsignal.game.combat.event.CombatEvent;
+import com.beyondsignal.game.combat.fleet.ai.FleetCommanderAI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -13,18 +14,39 @@ import com.beyondsignal.game.combat.projectile.ProjectileLifecycleProcessor;
 public final class CombatTickProcessor {
     private final CombatCommandProcessor commandProcessor;
     private final ProjectileLifecycleProcessor projectileProcessor;
+    private final FleetCommanderAI fleetCommander;
 
     public CombatTickProcessor() {
-        this(new CombatCommandProcessor(), new ProjectileLifecycleProcessor());
+        this(
+            new CombatCommandProcessor(),
+            new ProjectileLifecycleProcessor(),
+            new FleetCommanderAI()
+        );
     }
 
     public CombatTickProcessor(CombatCommandProcessor commandProcessor) {
-        this(commandProcessor, new ProjectileLifecycleProcessor());
+        this(
+            commandProcessor,
+            new ProjectileLifecycleProcessor(),
+            new FleetCommanderAI()
+        );
     }
 
     public CombatTickProcessor(
         CombatCommandProcessor commandProcessor,
         ProjectileLifecycleProcessor projectileProcessor
+    ) {
+        this(
+            commandProcessor,
+            projectileProcessor,
+            new FleetCommanderAI()
+        );
+    }
+
+    public CombatTickProcessor(
+        CombatCommandProcessor commandProcessor,
+        ProjectileLifecycleProcessor projectileProcessor,
+        FleetCommanderAI fleetCommander
     ) {
         this.commandProcessor = Objects.requireNonNull(
             commandProcessor,
@@ -33,6 +55,10 @@ public final class CombatTickProcessor {
         this.projectileProcessor = Objects.requireNonNull(
             projectileProcessor,
             "projectileProcessor"
+        );
+        this.fleetCommander = Objects.requireNonNull(
+            fleetCommander,
+            "fleetCommander"
         );
     }
 
@@ -65,6 +91,10 @@ public final class CombatTickProcessor {
             produced,
             projectileProcessor.advance(encounter, tick)
         );
+
+        for (var decision : fleetCommander.evaluate(encounter, tick)) {
+            encounter.recordFleetDecision(decision);
+        }
 
         encounter.evaluateCompletion();
 

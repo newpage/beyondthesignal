@@ -3,6 +3,7 @@ package com.beyondsignal.game.combat.engine;
 import com.beyondsignal.game.combat.command.CombatCommand;
 import com.beyondsignal.game.combat.event.CombatEvent;
 import com.beyondsignal.game.combat.fleet.FleetState;
+import com.beyondsignal.game.combat.fleet.ai.FleetDecision;
 import com.beyondsignal.game.combat.log.CombatLog;
 import com.beyondsignal.game.combat.model.CombatId;
 import com.beyondsignal.game.combat.model.CombatSide;
@@ -28,6 +29,8 @@ public final class CombatEncounter {
     private final Map<UUID, ProjectileState> projectiles = new LinkedHashMap<>();
     private final Map<UUID, WreckState> wrecks = new LinkedHashMap<>();
     private final Map<UUID, FleetState> fleets = new LinkedHashMap<>();
+    private final Map<UUID, FleetDecision> fleetDecisions =
+        new LinkedHashMap<>();
     private final CombatLog combatLog = new CombatLog();
 
     private CombatEncounterStatus status = CombatEncounterStatus.INITIALIZING;
@@ -138,6 +141,34 @@ public synchronized List<WreckState> wrecks() {
 
     public synchronized List<FleetState> fleets() {
         return List.copyOf(fleets.values());
+    }
+
+    public synchronized void recordFleetDecision(
+        FleetDecision decision
+    ) {
+        Objects.requireNonNull(decision, "decision");
+        if (!fleets.containsKey(decision.fleetId())) {
+            throw new IllegalArgumentException(
+                "Unknown fleet: " + decision.fleetId()
+            );
+        }
+        fleetDecisions.put(decision.fleetId(), decision);
+    }
+
+    public synchronized Optional<FleetDecision> fleetDecision(UUID fleetId) {
+        return Optional.ofNullable(
+            fleetDecisions.get(
+                Objects.requireNonNull(fleetId, "fleetId")
+            )
+        );
+    }
+
+    public synchronized List<FleetDecision> fleetDecisions() {
+        return fleetDecisions.values().stream()
+            .sorted(java.util.Comparator.comparing(
+                decision -> decision.fleetId().toString()
+            ))
+            .toList();
     }
 
     public synchronized void submit(CombatCommand command) {
