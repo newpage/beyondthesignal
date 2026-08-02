@@ -1,0 +1,199 @@
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  color: #edf5ff;
+  background: #02050d;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+button {
+  color: inherit;
+  font: inherit;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 50% -20%, #15274a 0, transparent 45%),
+    #02050d;
+}
+
+.simulation-clock {
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(280px, 1fr);
+  align-items: center;
+  gap: 28px;
+  min-height: 78px;
+  padding: 12px 22px;
+  border-bottom: 1px solid rgba(120, 174, 255, 0.18);
+  background: rgba(3, 9, 22, 0.92);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(18px);
+}
+
+.simulation-clock > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.eyebrow {
+  color: #6ea9ff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.simulation-clock strong {
+  font-size: 1.02rem;
+  font-weight: 650;
+}
+
+.simulation-clock dl {
+  display: flex;
+  gap: 32px;
+  margin: 0;
+}
+
+.simulation-clock dl div {
+  display: grid;
+  gap: 2px;
+  text-align: center;
+}
+
+.simulation-clock dt {
+  color: #8395b2;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.simulation-clock dd {
+  min-width: 86px;
+  margin: 0;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.86rem;
+}
+
+.simulation-clock dd[data-state="CONNECTED"] {
+  color: #7af4b7;
+}
+
+.simulation-clock dd[data-state="DEMO"] {
+  color: #ffd277;
+}
+
+.playback-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.playback-controls button {
+  min-width: 48px;
+  padding: 8px 12px;
+  border: 1px solid rgba(126, 172, 247, 0.25);
+  border-radius: 7px;
+  background: rgba(49, 79, 128, 0.15);
+  cursor: pointer;
+}
+
+.playback-controls button:hover,
+.playback-controls button.active {
+  border-color: rgba(102, 217, 255, 0.7);
+  background: rgba(40, 145, 203, 0.28);
+}
+
+.battle-stage {
+  position: relative;
+  min-height: 0;
+}
+
+.battle-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.camera-input {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+
+.camera-input:active {
+  cursor: grabbing;
+}
+
+.legend {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(125, 175, 245, 0.18);
+  border-radius: 9px;
+  background: rgba(4, 11, 27, 0.82);
+  color: #aebbd0;
+  font-size: 0.76rem;
+  backdrop-filter: blur(14px);
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend i.alliance {
+  background: #66d9ff;
+  box-shadow: 0 0 10px #66d9ff;
+}
+
+.legend i.hostile {
+  background: #ff5d78;
+  box-shadow: 0 0 10px #ff5d78;
+}
+
+.legend small {
+  color: #667791;
+}
+
+@media (max-width: 900px) {
+  .simulation-clock {
+    grid-template-columns: 1fr auto;
+  }
+
+  .simulation-clock dl {
+    display: none;
+  }
+}
