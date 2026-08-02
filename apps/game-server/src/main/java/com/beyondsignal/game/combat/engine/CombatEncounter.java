@@ -2,6 +2,7 @@ package com.beyondsignal.game.combat.engine;
 
 import com.beyondsignal.game.combat.command.CombatCommand;
 import com.beyondsignal.game.combat.event.CombatEvent;
+import com.beyondsignal.game.combat.fleet.FleetState;
 import com.beyondsignal.game.combat.log.CombatLog;
 import com.beyondsignal.game.combat.model.CombatId;
 import com.beyondsignal.game.combat.model.CombatSide;
@@ -26,6 +27,7 @@ public final class CombatEncounter {
     private final Queue<CombatCommand> commandQueue = new ArrayDeque<>();
     private final Map<UUID, ProjectileState> projectiles = new LinkedHashMap<>();
     private final Map<UUID, WreckState> wrecks = new LinkedHashMap<>();
+    private final Map<UUID, FleetState> fleets = new LinkedHashMap<>();
     private final CombatLog combatLog = new CombatLog();
 
     private CombatEncounterStatus status = CombatEncounterStatus.INITIALIZING;
@@ -113,6 +115,30 @@ public synchronized void addWreck(WreckState wreck) {
 public synchronized List<WreckState> wrecks() {
     return List.copyOf(wrecks.values());
 }
+
+    public synchronized void addFleet(FleetState fleet) {
+        Objects.requireNonNull(fleet, "fleet");
+        if (status != CombatEncounterStatus.INITIALIZING) {
+            throw new IllegalStateException(
+                "Fleets can only be added during initialization"
+            );
+        }
+        if (fleets.putIfAbsent(fleet.fleetId(), fleet) != null) {
+            throw new IllegalArgumentException(
+                "Duplicate fleet: " + fleet.fleetId()
+            );
+        }
+    }
+
+    public synchronized Optional<FleetState> fleet(UUID fleetId) {
+        return Optional.ofNullable(
+            fleets.get(Objects.requireNonNull(fleetId, "fleetId"))
+        );
+    }
+
+    public synchronized List<FleetState> fleets() {
+        return List.copyOf(fleets.values());
+    }
 
     public synchronized void submit(CombatCommand command) {
         Objects.requireNonNull(command, "command");
