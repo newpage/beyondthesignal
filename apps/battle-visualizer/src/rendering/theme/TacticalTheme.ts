@@ -15,6 +15,10 @@ export type TacticalTheme = Readonly<{
   hullMedium: number;
   hullLow: number;
   hullCritical: number;
+  targetLine: number;
+  beamFriendly: number;
+  beamHostile: number;
+  shieldImpact: number;
 }>;
 
 export const tacticalTheme: TacticalTheme = {
@@ -34,6 +38,10 @@ export const tacticalTheme: TacticalTheme = {
   hullMedium: 0xd4ed66,
   hullLow: 0xffa94d,
   hullCritical: 0xff596d,
+  targetLine: 0x6f88a8,
+  beamFriendly: 0x58dfff,
+  beamHostile: 0xff496f,
+  shieldImpact: 0x9fe9ff,
 };
 
 export const statusColor = (
