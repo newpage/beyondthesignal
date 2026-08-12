@@ -72,7 +72,8 @@ public final class CombatPresentationCoordinator
             events,
             encounter.projectiles(),
             encounter.wrecks(),
-            encounter.fleets()
+            encounter.fleets(),
+            encounter.fleetDecisions()
         ));
     }
 

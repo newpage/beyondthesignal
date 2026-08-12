@@ -677,3 +677,8 @@ button {
 .legend {
   border-left: 3px solid rgba(102, 217, 255, 0.46);
 }
+
+.fleet-command-panel{display:grid;gap:8px;padding:10px 0;border-top:1px solid rgba(102,217,255,.2);border-bottom:1px solid rgba(102,217,255,.2)}
+.fleet-command-panel>header,.fleet-command-title{display:flex;justify-content:space-between;gap:12px}
+.fleet-command-panel article{padding:8px;border-left:2px solid rgba(255,209,102,.7);background:rgba(8,20,34,.7)}
+.fleet-command-panel article dl{display:grid;gap:4px;margin:6px 0 0}.fleet-command-panel article dl div{display:flex;justify-content:space-between;gap:10px}.fleet-retreat-warning{margin-top:7px;color:#ff6b82;font-size:.65rem;font-weight:800;letter-spacing:.08em}

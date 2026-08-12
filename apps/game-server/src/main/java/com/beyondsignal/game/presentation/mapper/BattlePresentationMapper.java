@@ -6,6 +6,8 @@ import com.beyondsignal.game.presentation.context.PresentationContext;
 import com.beyondsignal.game.presentation.frame.BattleEventView;
 import com.beyondsignal.game.presentation.frame.BattleFleetOrderView;
 import com.beyondsignal.game.presentation.frame.BattleFleetView;
+import com.beyondsignal.game.presentation.frame.BattleFleetDecisionView;
+import com.beyondsignal.game.presentation.frame.BattleThreatView;
 import com.beyondsignal.game.presentation.frame.BattleSquadronView;
 import com.beyondsignal.game.presentation.frame.BattleFrameMetadata;
 import com.beyondsignal.game.presentation.frame.BattleFrameV1;
@@ -40,6 +42,7 @@ public final class BattlePresentationMapper {
             mapFleets(context),
             mapSquadrons(context),
             mapFleetOrders(context),
+            mapFleetDecisions(context),
             mapEvents(context),
             debug(context)
         );
@@ -211,6 +214,29 @@ private java.util.List<BattleWreckView> mapWrecks(
                 order.parameters()
             ))
             .toList();
+    }
+
+    private java.util.List<BattleFleetDecisionView> mapFleetDecisions(
+        PresentationContext context
+    ) {
+        return context.fleetDecisions().stream()
+            .sorted(java.util.Comparator.comparing(
+                decision -> decision.fleetId().toString()
+            ))
+            .map(decision -> new BattleFleetDecisionView(
+                decision.fleetId(),
+                decision.doctrine().name(),
+                decision.objective().name(),
+                decision.primaryTargetId(),
+                decision.threats().stream()
+                    .map(threat -> new BattleThreatView(
+                        threat.participantId(), threat.score(),
+                        threat.firepower(), threat.hullRatio()
+                    )).toList(),
+                decision.commanderStatus().name(),
+                decision.retreat(),
+                decision.generatedTick()
+            )).toList();
     }
 
     private java.util.List<BattleEventView> mapEvents(

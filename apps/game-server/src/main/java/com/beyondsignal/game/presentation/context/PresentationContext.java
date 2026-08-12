@@ -5,6 +5,7 @@ import com.beyondsignal.game.combat.event.CombatEvent;
 import com.beyondsignal.game.combat.projectile.ProjectileState;
 import com.beyondsignal.game.combat.fleet.FleetOrder;
 import com.beyondsignal.game.combat.fleet.FleetState;
+import com.beyondsignal.game.combat.fleet.ai.FleetDecision;
 import com.beyondsignal.game.combat.fleet.SquadronState;
 import com.beyondsignal.game.combat.wreck.WreckState;
 import java.util.List;
@@ -21,7 +22,8 @@ public record PresentationContext(
     List<CombatEvent> combatEvents,
     List<ProjectileState> projectiles,
     List<WreckState> wrecks,
-    List<FleetState> fleets
+    List<FleetState> fleets,
+    List<FleetDecision> fleetDecisions
 ) {
     public PresentationContext {
         snapshot = Objects.requireNonNull(snapshot, "snapshot");
@@ -43,6 +45,9 @@ public record PresentationContext(
         fleets = List.copyOf(
             Objects.requireNonNull(fleets, "fleets")
         );
+        fleetDecisions = List.copyOf(
+            Objects.requireNonNull(fleetDecisions, "fleetDecisions")
+        );
     }
 
     public PresentationContext(
@@ -60,6 +65,7 @@ public record PresentationContext(
             generatedAt,
             configuration,
             debugOptions,
+            List.of(),
             List.of(),
             List.of(),
             List.of(),
@@ -86,6 +92,7 @@ public record PresentationContext(
             combatEvents,
             List.of(),
             List.of(),
+            List.of(),
             List.of()
         );
     }
@@ -110,9 +117,37 @@ public PresentationContext(
         combatEvents,
         projectiles,
         List.of(),
+        List.of(),
         List.of()
     );
 }
+
+    public PresentationContext(
+        CombatAiSnapshot snapshot,
+        long seed,
+        long frameSequence,
+        Instant generatedAt,
+        PresentationConfiguration configuration,
+        PresentationDebugOptions debugOptions,
+        List<CombatEvent> combatEvents,
+        List<ProjectileState> projectiles,
+        List<WreckState> wrecks,
+        List<FleetState> fleets
+    ) {
+        this(
+            snapshot,
+            seed,
+            frameSequence,
+            generatedAt,
+            configuration,
+            debugOptions,
+            combatEvents,
+            projectiles,
+            wrecks,
+            fleets,
+            List.of()
+        );
+    }
 
     public PresentationContext(
         CombatAiSnapshot snapshot,
@@ -135,6 +170,7 @@ public PresentationContext(
             combatEvents,
             projectiles,
             wrecks,
+            List.of(),
             List.of()
         );
     }

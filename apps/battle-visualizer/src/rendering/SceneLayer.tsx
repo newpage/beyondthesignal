@@ -13,6 +13,7 @@ import { WeaponEffectLayer } from "./WeaponEffectLayer";
 import { ProjectileLayer } from "./ProjectileLayer";
 import { WreckLayer } from "./WreckLayer";
 import { TargetingReticleLayer } from "./TargetingReticleLayer";
+import { FleetDecisionOverlay } from "./FleetDecisionOverlay";
 import { CinematicEffectsLayer } from "./cinematic/CinematicEffectsLayer";
 import type { VisualQuality } from "./cinematic/VisualQuality";
 
@@ -40,6 +41,7 @@ export const SceneLayer = ({ frame, selectedShipId, onSelectShip, visualQuality 
   return (
     <>
       <CinematicEffectsLayer frame={frame} ships={ships} quality={visualQuality} />
+      <FleetDecisionOverlay frame={frame} />
       <AIIntelligenceLayer selectedShip={selectedShip} targetShip={targetShip} />
       <WeaponEffectLayer engagements={engagements} />
       <ProjectileLayer projectiles={projectiles} />

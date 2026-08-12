@@ -8,6 +8,10 @@ import com.beyondsignal.game.combat.fleet.FleetOrder;
 import com.beyondsignal.game.combat.fleet.FleetOrderType;
 import com.beyondsignal.game.combat.fleet.FleetState;
 import com.beyondsignal.game.combat.fleet.SquadronState;
+import com.beyondsignal.game.combat.fleet.ai.CommanderStatus;
+import com.beyondsignal.game.combat.fleet.ai.FleetDecision;
+import com.beyondsignal.game.combat.fleet.ai.FleetObjectiveType;
+import com.beyondsignal.game.combat.fleet.ai.ThreatScore;
 import com.beyondsignal.game.combat.model.CombatId;
 import com.beyondsignal.game.combat.model.CombatSide;
 import com.beyondsignal.game.presentation.context.PresentationConfiguration;
@@ -79,5 +83,47 @@ class FleetPresentationMapperTest {
         assertEquals(2, frame.orders().size());
         assertEquals(highPriority.orderId(), frame.orders().getFirst().id());
         assertEquals(lowPriority.orderId(), frame.orders().getLast().id());
+    }
+
+    @Test
+    void mapsFleetDecisionTelemetry() {
+        UUID fleetId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        FleetDecision decision = new FleetDecision(
+            fleetId,
+            FleetDoctrine.AGGRESSIVE,
+            FleetObjectiveType.ENGAGE_PRIMARY_THREAT,
+            targetId,
+            List.of(new ThreatScore(targetId, 42.5, 8, 0.75)),
+            CommanderStatus.ACTIVE,
+            false,
+            19
+        );
+
+        var frame = new BattlePresentationMapper().map(
+            new PresentationContext(
+                new CombatAiSnapshot(CombatId.random(), 19, List.of()),
+                7,
+                2,
+                Instant.EPOCH,
+                PresentationConfiguration.defaults(),
+                PresentationDebugOptions.disabled(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(decision)
+            )
+        );
+
+        assertEquals(1, frame.fleetDecisions().size());
+        var view = frame.fleetDecisions().getFirst();
+        assertEquals(fleetId, view.fleetId());
+        assertEquals("AGGRESSIVE", view.doctrine());
+        assertEquals("ENGAGE_PRIMARY_THREAT", view.objective());
+        assertEquals(targetId, view.primaryTargetId());
+        assertEquals(42.5, view.threats().getFirst().score());
+        assertEquals("ACTIVE", view.commanderStatus());
+        assertEquals(19, view.generatedTick());
     }
 }

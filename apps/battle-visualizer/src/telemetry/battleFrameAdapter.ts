@@ -57,6 +57,9 @@ export const adaptBattleFrame = (frame: BattleFrameV1): BattleFrame => ({
     status: projectile.status,
     progress: projectile.progress,
   })),
+  fleets: (frame.fleets ?? []).map((fleet) => ({ ...fleet })),
+  squadrons: (frame.squadrons ?? []).map((squadron) => ({ id: squadron.id, name: squadron.name, leaderId: squadron.leaderId, memberIds: squadron.memberIds, formation: squadron.formation, morale: squadron.morale, status: squadron.status })),
+  fleetDecisions: (frame.fleetDecisions ?? []).map((decision) => ({ fleetId: decision.fleetId, doctrine: decision.doctrine, objective: decision.objective, primaryTargetId: decision.primaryTargetId ?? undefined, threats: decision.threats, commanderStatus: decision.commanderStatus, retreat: decision.retreat, generatedTick: decision.generatedTick })),
   events: (frame.events ?? []).map((event) => ({
     tick: event.tick,
     type: event.type,

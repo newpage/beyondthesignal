@@ -1,5 +1,6 @@
 import type { BattleFrame, ConnectionState } from "../types";
 import { deriveTacticalStatus } from "./tacticalStatus";
+import { FleetCommandPanel } from "./FleetCommandPanel";
 import { VISUAL_QUALITIES, type VisualQuality } from "../rendering/cinematic/VisualQuality";
 
 type Props = Readonly<{
@@ -52,6 +53,7 @@ export const TacticalHud = ({
         <div><dt>Zoom</dt><dd>{Math.round(zoom * 100)}%</dd></div>
         <div><dt>Telemetry</dt><dd data-state={connectionState}>{connectionState}</dd></div>
       </dl>
+      <FleetCommandPanel frame={frame} />
       <label className="quality-control">
         <span>Visual Quality</span>
         <select

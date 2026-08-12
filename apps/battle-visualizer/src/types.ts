@@ -48,6 +48,11 @@ export type WreckTelemetry = Readonly<{
   cause: string;
 }>;
 
+export type FleetTelemetry = Readonly<{ id: string; name: string; commander: string; faction: string; doctrine: string; squadronIds: readonly string[]; orderIds: readonly string[]; }>;
+export type SquadronTelemetry = Readonly<{ id: string; name: string; leaderId: string; memberIds: readonly string[]; formation: string; morale: number; status: string; }>;
+export type ThreatTelemetry = Readonly<{ participantId: string; score: number; firepower: number; hullRatio: number; }>;
+export type FleetDecisionTelemetry = Readonly<{ fleetId: string; doctrine: string; objective: string; primaryTargetId?: string; threats: readonly ThreatTelemetry[]; commanderStatus: string; retreat: boolean; generatedTick: number; }>;
+
 export type BattleFrame = Readonly<{
   battleId: string;
   tick: number;
@@ -55,6 +60,9 @@ export type BattleFrame = Readonly<{
   ships: readonly ShipTelemetry[];
   projectiles?: readonly ProjectileTelemetry[];
   wrecks?: readonly WreckTelemetry[];
+  fleets?: readonly FleetTelemetry[];
+  squadrons?: readonly SquadronTelemetry[];
+  fleetDecisions?: readonly FleetDecisionTelemetry[];
   events?: readonly CombatVisualEvent[];
 }>;
 
@@ -136,6 +144,10 @@ export type BattleWreckViewV1 = Readonly<{
   cause: string;
 }>;
 
+export type BattleFleetViewV1 = Readonly<{ id: string; name: string; commander: string; faction: string; doctrine: string; squadronIds: readonly string[]; orderIds: readonly string[]; }>;
+export type BattleSquadronViewV1 = Readonly<{ id: string; name: string; leaderId: string; memberIds: readonly string[]; formation: string; currentOrderId: string | null; priorityTargetId: string | null; morale: number; status: string; }>;
+export type BattleFleetDecisionViewV1 = Readonly<{ fleetId: string; doctrine: string; objective: string; primaryTargetId: string | null; threats: readonly ThreatTelemetry[]; commanderStatus: string; retreat: boolean; generatedTick: number; }>;
+
 export type BattleFrameV1 = Readonly<{
   metadata: BattleFrameMetadataV1;
   capabilities: Readonly<{ enabled: readonly string[] }>;
@@ -144,6 +156,9 @@ export type BattleFrameV1 = Readonly<{
   movement: readonly unknown[];
   projectiles?: readonly BattleProjectileViewV1[];
   wrecks?: readonly BattleWreckViewV1[];
+  fleets?: readonly BattleFleetViewV1[];
+  squadrons?: readonly BattleSquadronViewV1[];
+  fleetDecisions?: readonly BattleFleetDecisionViewV1[];
   events: readonly BattleEventViewV1[];
   debug: Readonly<Record<string, string>>;
 }>;
