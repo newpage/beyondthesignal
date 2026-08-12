@@ -12,7 +12,9 @@ export const useCameraController = (
   const [followingSelection, setFollowingSelection] = useState(false);
   const [measurement, setMeasurement] = useState<RangeMeasurementState>();
   const pointerStart = useRef<Point2D | null>(null);
+  const pointerOrigin = useRef<Point2D | null>(null);
   const measuring = useRef(false);
+  const dragging = useRef(false);
 
   const viewport = (): Point2D => ({
     x: window.innerWidth,
@@ -79,6 +81,8 @@ export const useCameraController = (
         if (event.button !== 0 && event.button !== 1) return;
         const screen = toLocalScreen(event);
         pointerStart.current = screen;
+        pointerOrigin.current = screen;
+        dragging.current = false;
         measuring.current = event.shiftKey && event.button === 0;
         if (measuring.current) {
           const world = camera.screenToWorld(screen, viewport());
@@ -91,7 +95,9 @@ export const useCameraController = (
         } else {
           setFollowingSelection(false);
         }
-        event.currentTarget.setPointerCapture(event.pointerId);
+        if (measuring.current) {
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }
       },
       onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => {
         const start = pointerStart.current;
@@ -107,6 +113,17 @@ export const useCameraController = (
           return;
         }
 
+        const origin = pointerOrigin.current;
+        if (!dragging.current && origin) {
+          const distance = Math.hypot(
+            screen.x - origin.x,
+            screen.y - origin.y,
+          );
+          if (distance < 4) return;
+          dragging.current = true;
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }
+
         const current = camera.snapshot();
         setState(camera.panBy({
           x: -(screen.x - start.x) / current.zoom,
@@ -116,7 +133,9 @@ export const useCameraController = (
       },
       onPointerUp: (event: React.PointerEvent<HTMLDivElement>) => {
         pointerStart.current = null;
+        pointerOrigin.current = null;
         measuring.current = false;
+        dragging.current = false;
         if (event.currentTarget.hasPointerCapture(event.pointerId)) {
           event.currentTarget.releasePointerCapture(event.pointerId);
         }
