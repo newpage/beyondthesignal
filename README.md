@@ -2,7 +2,7 @@
 
 **Beyond the Signal** is an AI-first episodic starship command game. The player commands an original exploration vessel, works with human or AI bridge officers, investigates unknown phenomena, and makes decisions whose consequences persist across episodes.
 
-The current release is **Milestone 7.2.3: Fleet Decision Telemetry**.
+The current release is **Milestone 7.3: Battle Scenario Control**.
 
 ## Architecture
 

@@ -1,6 +1,7 @@
 package com.beyondsignal.game;
 
 import com.beyondsignal.game.api.GameSessionRoutes;
+import com.beyondsignal.game.api.DeveloperBattleRoutes;
 import com.beyondsignal.game.combat.ai.snapshot.CombatSnapshotFactory;
 import com.beyondsignal.game.combat.engine.CombatSimulationEngine;
 import com.beyondsignal.game.presentation.buffer.BattleFrameBuffer;
@@ -51,8 +52,8 @@ import java.time.Duration;
 import java.util.Set;
 
 public final class PlatformVerticle extends AbstractVerticle {
-    private static final String VERSION = "0.7.2";
-    private static final String MILESTONE = "7.2.3 - Fleet Decision Telemetry";
+    private static final String VERSION = "0.7.3";
+    private static final String MILESTONE = "7.3 - Battle Scenario Control";
     private final Config config;
 
     private SqlClient postgres;
@@ -124,6 +125,7 @@ public final class PlatformVerticle extends AbstractVerticle {
             ),
             42L
         );
+        new DeveloperBattleRoutes(developerBattleRuntime).mount(router);
         BattleTelemetryWebSocketGateway telemetryGateway =
             new BattleTelemetryWebSocketGateway(telemetryHub);
 

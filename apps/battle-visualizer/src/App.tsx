@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ShipInspector } from "./components/ShipInspector";
+import { BattleControlPanel } from "./components/BattleControlPanel";
 import { SimulationClock } from "./components/SimulationClock";
 import { ReplayTimeline } from "./replay/ReplayTimeline";
 import { BattleViewport } from "./rendering/BattleViewport";
@@ -81,6 +82,7 @@ export const App = () => {
         />
 
         <ShipInspector ship={selectedShip} onClose={() => setSelectedShipId(undefined)} />
+        <BattleControlPanel />
 
         <ReplayTimeline
           currentIndex={snapshot.historyIndex}

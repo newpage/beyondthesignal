@@ -8,7 +8,6 @@ import com.beyondsignal.game.combat.fleet.FleetDoctrine;
 import com.beyondsignal.game.combat.fleet.FleetOrderType;
 import com.beyondsignal.game.combat.model.CombatId;
 import io.vertx.core.Vertx;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class DeveloperBattleRuntimeFleetTest {
@@ -20,9 +19,7 @@ class DeveloperBattleRuntimeFleetTest {
 
         try (DeveloperBattleRuntime ignored =
                  new DeveloperBattleRuntime(vertx, engine, seed)) {
-            CombatId combatId = new CombatId(UUID.nameUUIDFromBytes(
-                ("developer-battle-" + seed).getBytes()
-            ));
+            CombatId combatId = ignored.combatId();
             var encounter = engine.encounter(combatId).orElseThrow();
 
             assertEquals(2, encounter.fleets().size());
@@ -50,6 +47,29 @@ class DeveloperBattleRuntimeFleetTest {
             );
 
             assertTrue(encounter.status().name().equals("ACTIVE"));
+        } finally {
+            vertx.close();
+        }
+    }
+
+    @Test
+    void pausesResumesAndResetsTheDeveloperEncounter() {
+        Vertx vertx = Vertx.vertx();
+        CombatSimulationEngine engine = new CombatSimulationEngine();
+
+        try (DeveloperBattleRuntime runtime =
+                 new DeveloperBattleRuntime(vertx, engine, 702L)) {
+            assertEquals("PAUSED", runtime.status().state());
+            runtime.start(1_000L);
+            assertEquals("RUNNING", runtime.status().state());
+            assertEquals("PAUSED", runtime.pause().state());
+
+            var previousBattleId = runtime.status().battleId();
+            var reset = runtime.reset(DeveloperBattleScenario.COMMAND_AMBUSH);
+            assertEquals("RUNNING", reset.state());
+            assertEquals(DeveloperBattleScenario.COMMAND_AMBUSH, reset.scenario());
+            assertEquals(3, reset.hostileOperational());
+            assertTrue(!previousBattleId.equals(reset.battleId()));
         } finally {
             vertx.close();
         }

@@ -56,7 +56,11 @@ public final class DeveloperBattleRuntime implements AutoCloseable {
 
     private final Vertx vertx;
     private final CombatSimulationEngine engine;
-    private final CombatId combatId;
+    private final long baseSeed;
+    private CombatId combatId;
+    private DeveloperBattleScenario scenario;
+    private long generation;
+    private long periodMillis = 50L;
     private long timerId = -1;
 
     public DeveloperBattleRuntime(
@@ -66,11 +70,16 @@ public final class DeveloperBattleRuntime implements AutoCloseable {
     ) {
         this.vertx = vertx;
         this.engine = engine;
-        this.combatId = new CombatId(UUID.nameUUIDFromBytes(
-            ("developer-battle-" + seed).getBytes()
-        ));
+        this.baseSeed = seed;
+        initialize(DeveloperBattleScenario.FLEET_SKIRMISH);
+    }
 
-        var encounter = engine.createEncounter(combatId, seed);
+    private void initialize(DeveloperBattleScenario selectedScenario) {
+        scenario = selectedScenario;
+        combatId = new CombatId(UUID.nameUUIDFromBytes(
+            ("developer-battle-" + baseSeed + "-" + generation).getBytes()
+        ));
+        var encounter = engine.createEncounter(combatId, baseSeed + generation);
         CombatParticipant allianceCommand = participant(
             "alliance-command",
             CombatSide.FRIENDLY
@@ -91,12 +100,19 @@ public final class DeveloperBattleRuntime implements AutoCloseable {
             "hostile-raider",
             CombatSide.HOSTILE
         );
+        CombatParticipant hostileReinforcement = participant(
+            "hostile-reinforcement",
+            CombatSide.HOSTILE
+        );
 
         encounter.addParticipant(allianceCommand);
         encounter.addParticipant(allianceEscortOne);
         encounter.addParticipant(allianceEscortTwo);
         encounter.addParticipant(hostileCommand);
         encounter.addParticipant(hostileRaider);
+        if (scenario == DeveloperBattleScenario.COMMAND_AMBUSH) {
+            encounter.addParticipant(hostileReinforcement);
+        }
 
         registerDeveloperFleets(
             encounter,
@@ -114,6 +130,9 @@ public final class DeveloperBattleRuntime implements AutoCloseable {
         selectTarget(allianceEscortTwo, hostileCommand);
         selectTarget(hostileCommand, allianceCommand);
         selectTarget(hostileRaider, allianceEscortOne);
+        if (scenario == DeveloperBattleScenario.COMMAND_AMBUSH) {
+            selectTarget(hostileReinforcement, allianceCommand);
+        }
     }
 
     private static void registerDeveloperFleets(
@@ -192,15 +211,69 @@ public final class DeveloperBattleRuntime implements AutoCloseable {
         return UUID.nameUUIDFromBytes(value.getBytes());
     }
 
-    public void start(long periodMillis) {
+    public synchronized void start(long periodMillis) {
         if (periodMillis <= 0) {
             throw new IllegalArgumentException("periodMillis must be positive");
         }
         if (timerId != -1) {
             return;
         }
+        this.periodMillis = periodMillis;
         timerId = vertx.setPeriodic(periodMillis, ignored -> tick());
         tick();
+    }
+
+    public synchronized DeveloperBattleStatus pause() {
+        stopTimer();
+        return status();
+    }
+
+    public synchronized DeveloperBattleStatus resume() {
+        if (!engine.completed(combatId)) {
+            start(periodMillis);
+        }
+        return status();
+    }
+
+    public synchronized DeveloperBattleStatus reset(
+        DeveloperBattleScenario selectedScenario
+    ) {
+        stopTimer();
+        generation++;
+        initialize(selectedScenario);
+        start(periodMillis);
+        return status();
+    }
+
+    public synchronized DeveloperBattleStatus status() {
+        CombatEncounter encounter = engine.encounter(combatId).orElseThrow();
+        int alliance = operational(encounter, CombatSide.FRIENDLY);
+        int hostile = operational(encounter, CombatSide.HOSTILE);
+        boolean completed = engine.completed(combatId);
+        String outcome = !completed ? "UNDECIDED"
+            : alliance > 0 && hostile == 0 ? "ALLIANCE_VICTORY"
+            : hostile > 0 && alliance == 0 ? "HOSTILE_VICTORY"
+            : "DRAW";
+        return new DeveloperBattleStatus(
+            combatId.value(),
+            scenario,
+            completed ? "COMPLETED" : timerId == -1 ? "PAUSED" : "RUNNING",
+            encounter.context().clock().currentTick(),
+            outcome,
+            alliance,
+            hostile
+        );
+    }
+
+    public synchronized CombatId combatId() {
+        return combatId;
+    }
+
+    private static int operational(CombatEncounter encounter, CombatSide side) {
+        return (int) encounter.participants().stream()
+            .filter(participant -> participant.side() == side)
+            .filter(CombatParticipant::operational)
+            .count();
     }
 
     private void tick() {
@@ -299,7 +372,11 @@ public final class DeveloperBattleRuntime implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
+        stopTimer();
+    }
+
+    private void stopTimer() {
         if (timerId != -1) {
             vertx.cancelTimer(timerId);
             timerId = -1;

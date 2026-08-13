@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.3 - Milestone 7.3
+
+- Added authoritative battle lifecycle and scenario-control APIs.
+- Added Fleet Skirmish and Command Ambush scenarios.
+- Added visualizer controls for start/reset, pause, and resume.
+- Added live operational-force counts and victory/defeat outcomes.
+
 ## 0.7.2 - Milestone 7.2.3
 
 - Exposed fleet AI decisions and threat assessments through battle telemetry.

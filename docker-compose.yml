@@ -83,6 +83,7 @@ services:
       context: ./apps/battle-visualizer
       args:
         VITE_BATTLE_TELEMETRY_WS_URL: ${VITE_BATTLE_TELEMETRY_WS_URL:-ws://localhost:8080/ws/battle-telemetry}
+        VITE_GAME_API_URL: ${VITE_GAME_API_URL:-http://localhost:8080}
         VITE_USE_DEMO_TELEMETRY: ${VITE_USE_DEMO_TELEMETRY:-false}
     depends_on:
       game-server:
