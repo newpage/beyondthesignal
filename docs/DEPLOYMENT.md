@@ -15,12 +15,19 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
+Open the platform dashboard at http://localhost:3000 and the live battle
+visualizer at http://localhost:4173.
+
 Check status:
 
 ```bash
 docker compose ps
 curl -fsS http://localhost:8080/api/system/status
 ```
+
+The visualizer connects to `ws://localhost:8080/ws/battle-telemetry` by
+default. Override `VITE_BATTLE_TELEMETRY_WS_URL` before building when the game
+server is exposed through another hostname.
 
 ## Ollama-enabled deployment
 

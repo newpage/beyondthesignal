@@ -51,6 +51,8 @@ import java.time.Duration;
 import java.util.Set;
 
 public final class PlatformVerticle extends AbstractVerticle {
+    private static final String VERSION = "0.7.2";
+    private static final String MILESTONE = "7.2.3 - Fleet Decision Telemetry";
     private final Config config;
 
     private SqlClient postgres;
@@ -191,7 +193,7 @@ public final class PlatformVerticle extends AbstractVerticle {
         router.get("/api/health").handler(ctx -> ctx.json(new JsonObject()
             .put("service", "game-server")
             .put("project", "Beyond the Signal")
-            .put("version", "0.1.0")
+            .put("version", VERSION)
             .put("status", "UP")));
 
         router.get("/api/system/status").handler(ctx -> systemStatus()
@@ -235,8 +237,8 @@ public final class PlatformVerticle extends AbstractVerticle {
 
             return new JsonObject()
                 .put("project", "Beyond the Signal")
-                .put("milestone", "1 - Platform Foundation")
-                .put("version", "0.1.0")
+                .put("milestone", MILESTONE)
+                .put("version", VERSION)
                 .put("status", requiredUp ? "UP" : "DEGRADED")
                 .put("components", components);
         });

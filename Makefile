@@ -16,6 +16,7 @@ test:
 	cd apps/game-server && mvn test
 	cd apps/ai-service && python -m pytest
 	cd apps/web && npm test -- --run
+	cd apps/battle-visualizer && npm test
 
 status:
 	curl -fsS http://localhost:8080/api/system/status | python -m json.tool

@@ -3,6 +3,16 @@
 Milestone 4.1 establishes the browser visualization runtime for Beyond the
 Signal.
 
+## Run with the platform
+
+From the repository root:
+
+```bash
+docker compose up -d --build
+```
+
+Open http://localhost:4173. Live game-server telemetry is the default.
+
 ## Run locally
 
 ```bash
@@ -11,7 +21,7 @@ npm install
 npm run dev
 ```
 
-The application runs deterministic demo telemetry by default.
+The application connects to the local game-server WebSocket by default.
 
 To use a live game-server WebSocket:
 
@@ -40,5 +50,5 @@ Expected WebSocket messages are JSON `BattleFrame` objects matching
 - Reconnecting WebSocket telemetry client
 - Deterministic demo telemetry fallback
 
-The server-side WebSocket publisher and tactical overlays are intentionally
-reserved for the next integration sprint.
+Set `VITE_USE_DEMO_TELEMETRY=true` to run deterministic demo telemetry without
+the game server.

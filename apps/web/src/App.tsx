@@ -37,12 +37,12 @@ export default function App() {
       <header>
         <p className="eyebrow">AI-FIRST EPISODIC STARSHIP COMMAND</p>
         <h1>Beyond the Signal</h1>
-        <p className="subtitle">Milestone 1 establishes the deployable platform foundation for the universe, its crew, and the stories ahead.</p>
+        <p className="subtitle">Milestone 7.2.3 connects fleet AI decisions, coordinated targeting, and live tactical telemetry.</p>
       </header>
 
       <section className="summary">
         <div><span>Platform</span><strong className={`status ${status?.status?.toLowerCase()}`}>{status?.status ?? (loading ? 'CHECKING' : 'UNKNOWN')}</strong></div>
-        <div><span>Release</span><strong>{status?.version ?? '0.1.0'}</strong></div>
+        <div><span>Release</span><strong>{status?.version ?? '0.7.2'}</strong></div>
         <button type="button" onClick={() => void refresh()} disabled={loading}>{loading ? 'Checking…' : 'Refresh status'}</button>
       </section>
 

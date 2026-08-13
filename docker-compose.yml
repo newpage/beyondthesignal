@@ -78,6 +78,19 @@ services:
       - "3000:80"
     networks: [beyond-signal]
 
+  battle-visualizer:
+    build:
+      context: ./apps/battle-visualizer
+      args:
+        VITE_BATTLE_TELEMETRY_WS_URL: ${VITE_BATTLE_TELEMETRY_WS_URL:-ws://localhost:8080/ws/battle-telemetry}
+        VITE_USE_DEMO_TELEMETRY: ${VITE_USE_DEMO_TELEMETRY:-false}
+    depends_on:
+      game-server:
+        condition: service_started
+    ports:
+      - "${BATTLE_VISUALIZER_PORT:-4173}:80"
+    networks: [beyond-signal]
+
 volumes:
   postgres_data:
   redis_data:

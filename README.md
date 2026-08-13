@@ -2,11 +2,12 @@
 
 **Beyond the Signal** is an AI-first episodic starship command game. The player commands an original exploration vessel, works with human or AI bridge officers, investigates unknown phenomena, and makes decisions whose consequences persist across episodes.
 
-This repository contains **Milestone 1: Platform Foundation**.
+The current release is **Milestone 7.2.3: Fleet Decision Telemetry**.
 
 ## Architecture
 
 - **React + TypeScript** health dashboard
+- **React + PixiJS** tactical battle visualizer
 - **Java 21 + Eclipse Vert.x 5** authoritative game server
 - **Python 3.12 + FastAPI** AI service
 - **PostgreSQL** authoritative persistence
@@ -26,12 +27,13 @@ docker compose up -d --build
 Open:
 
 - Dashboard: http://localhost:3000
+- Battle visualizer: http://localhost:4173
 - Game API: http://localhost:8080/api/health
 - System status: http://localhost:8080/api/system/status
 - AI API: http://localhost:8000/health
 - AI OpenAPI: http://localhost:8000/docs
 
-Ollama is optional in Milestone 1. To launch it too:
+Ollama remains optional. To launch it too:
 
 ```bash
 docker compose --profile ai up -d --build
